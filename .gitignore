@@ -1,0 +1,16 @@
+
+# Derleme çıktıları
+bin/
+obj/
+
+# Yerel yapılandırma dosyaları
+appsettings.Development.json
+
+# Geçici dosyalar
+*.suo
+*.user
+*.lock.json
+
+# NuGet önbellekleri
+project.assets.json
+project.nuget.cache
