@@ -14,3 +14,49 @@ appsettings.Development.json
 # NuGet önbellekleri
 project.assets.json
 project.nuget.cache
+
+node_modules/
+*.env
+*.zip
+*.mp4
+.DS_Store
+*.log
+## Build results
+bin/
+obj/
+
+## User-specific files
+*.user
+*.suo
+
+## Rider
+.idea/
+
+## VS Code
+.vscode/
+
+## Logs
+*.log
+
+## Others
+*.db
+*.sqlite
+*.pdb
+*.cache
+*.tmp
+*.swp
+
+# .NET Output
+project.lock.json
+project.fragment.lock.json
+
+# NuGet
+*.nupkg
+*.snupkg
+packages/
+project.assets.json
+project.nuget.cache
+
+# Configuration
+appsettings.*.json
+secrets.json
