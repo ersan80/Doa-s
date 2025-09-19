@@ -6,6 +6,7 @@ import App from "../components/App";
 import CatalogPage from "../pages/catalog/CatalogPage";
 import ProductDetails from "../pages/catalog/ProductDetails";
 import AuthPage from "../pages/AuthPage";
+import RegisterPage from "../pages/RegisterPage";  
 export const router = createBrowserRouter([
 
     {
@@ -17,7 +18,8 @@ export const router = createBrowserRouter([
             { path: "/contact", element: <ContactPage /> },
             { path: "/catalog", element: <CatalogPage /> },
             { path: "/catalog/:id", element: <ProductDetails /> },
-            {path: "/auth", element: <AuthPage />   }
+            { path: "/auth", element: <AuthPage /> },
+            { path:"/register", element: <RegisterPage/>    }
         ]
     }
 ]);

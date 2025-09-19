@@ -1,4 +1,4 @@
-using API.Data;
+
 using API.Entity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,9 +14,9 @@ public class AuthController : ControllerBase
     {
         if (model.Email == "test@example.com" && model.Password == "password123")
         {
-            return Ok(new { success = true, message = "Entry Succsess" });
+            return Ok(new { success = true, message = "Entry Succsess", email = model.Email , password=model.Password });
         }
-        return BadRequest(new { success = false, message = "Invalid E-mail or password" });
+        return BadRequest(new { success = false, message = "Invalid E-mail or Password" });
     }
 }
 
