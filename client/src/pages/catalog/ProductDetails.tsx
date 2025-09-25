@@ -5,14 +5,14 @@ import { IProduct } from "../../model/IProduct";
 import MediaSkeleton from "../MediaSkeleton";
 import { IMediaProps } from "../../model/IMediaProps";
 
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
+const API_IMAGES_URL = import.meta.env.VITE_API_IMAGES_URL;
 
 export default function ProductDetails() {
 
     const { id } = useParams<{ id: string }>();
     const [product, setProduct] = useState<IProduct | null>(null);
     const [loading, setLoading] = useState<IMediaProps>({ loading: true });
-    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-    const API_IMAGES_URL = import.meta.env.VITE_API_IMAGES_URL;
 
     useEffect(() => {
         fetch(`${API_BASE_URL}/Products/${id}`)

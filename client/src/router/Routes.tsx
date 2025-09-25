@@ -5,8 +5,9 @@ import ContactPage from "../pages/ContactPage";
 import App from "../components/App";
 import CatalogPage from "../pages/catalog/CatalogPage";
 import ProductDetails from "../pages/catalog/ProductDetails";
-import AuthPage from "../pages/AuthPage";
-import RegisterPage from "../pages/RegisterPage";  
+import LoginPage from "../pages/LoginPage";
+import RegisterPage from "../pages/RegisterPage"; 
+import ConfirmEmailPage from "../pages/ConfirmEmailPage"; 
 export const router = createBrowserRouter([
 
     {
@@ -18,8 +19,9 @@ export const router = createBrowserRouter([
             { path: "/contact", element: <ContactPage /> },
             { path: "/catalog", element: <CatalogPage /> },
             { path: "/catalog/:id", element: <ProductDetails /> },
-            { path: "/auth", element: <AuthPage /> },
-            { path:"/register", element: <RegisterPage/>    }
+            { path: "/login", element: <LoginPage /> },
+            { path: "/register", element: <RegisterPage /> },
+            { path:"/confirm-email", element: <ConfirmEmailPage /> }
         ]
     }
 ]);

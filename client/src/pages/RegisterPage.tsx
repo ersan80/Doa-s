@@ -1,13 +1,13 @@
+
 import { useState } from 'react';
 import { toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import {
-    Box, TextField, Button, Typography, Container,
-    Paper
+    Box, TextField, Button, Typography, Container, Paper
 } from '@mui/material';
-import { createGlobalStyle } from 'styled-components';
 import ToastProvider from './ToastContainer';
 import { Visibility, VisibilityOff } from '@mui/icons-material';
+import { NavLink } from 'react-router';
 
 interface RegisterData {
     name: string;
@@ -15,42 +15,54 @@ interface RegisterData {
     password: string;
 }
 
-interface ApiResponse {
-    success: boolean;
-    message?: string;
-}
-
-const GlobalFont = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-  body {
-    font-family: 'Poppins', sans-serif;
-  }
-`;
-
 const RegisterPage: React.FC = () => {
-    const [registerData, setRegisterData] = useState<RegisterData>({ name: '', email: '', password: '' });
+    const [registerData, setRegisterData] = useState<RegisterData>({
+        name: '',
+        email: '',
+        password: ''
+    });
+    const [confirmPassword, setConfirmPassword] = useState<string>('');
     const [showPassword, setShowPassword] = useState<boolean>(false);
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
-    const handleSubmit = (event: React.FormEvent) => {
+
+    const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        fetch(`${API_BASE_URL}/Auth/register`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(registerData),
-        })
-            .then(response => response.json() as Promise<ApiResponse>)
-            .then(data => {
-                if (data.success) {
-                    toast.success('Register Success!', { autoClose: 3000 });
-                    setRegisterData({ name: '', email: '', password: '' });
-                } else {
-                    toast.error(data.message || 'Register failed. Please try again.', { autoClose: 3000 });
-                }
-            })
-            .catch(() => {
-                toast.error('Something went wrong. Please try again later.');
+
+        if (!registerData.name || !registerData.email || !registerData.password) {
+            toast.error("Please fill all fields.");
+            return;
+        }
+
+        if (registerData.password !== confirmPassword) {
+            toast.error('Passwords do not match!', { autoClose: 3000 });
+            return;
+        }
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/Register`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    Name: registerData.name,
+                    Email: registerData.email,
+                    Password: registerData.password
+                })
             });
+
+            const data = await response.json();
+            console.log(data)
+            if (response.ok && data.success) {
+                toast.success('Register Success!', { autoClose: 3000 });
+                setRegisterData({ name: '', email: '', password: '' });
+                setConfirmPassword('');
+            } else {
+                toast.error(data.message || 'Register failed. Please try again.', { autoClose: 3000 });
+            }
+        } catch (error: unknown) {
+            console.error('Register Error:', error);
+            toast.error('Something went wrong. Please try again later.');
+        }
     };
 
     const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -60,7 +72,6 @@ const RegisterPage: React.FC = () => {
 
     return (
         <>
-            <GlobalFont />
             <Container maxWidth="xs" sx={{ mt: 8 }}>
                 <Paper elevation={3} sx={{ p: 4, borderRadius: 2 }}>
                     <Box
@@ -116,6 +127,33 @@ const RegisterPage: React.FC = () => {
                             }}
                         />
 
+                        <TextField
+                            label="Confirm Password"
+                            required
+                            variant="outlined"
+                            fullWidth
+                            margin="normal"
+                            type={showPassword ? 'text' : 'password'}
+                            value={confirmPassword}
+                            onChange={(e) => setConfirmPassword(e.target.value)}
+                            InputProps={{
+                                endAdornment: (
+                                    <Box
+                                        onClick={() => setShowPassword(!showPassword)}
+                                        sx={{ cursor: 'pointer', mr: 1 }}
+                                    >
+                                        {showPassword ? <VisibilityOff /> : <Visibility />}
+                                    </Box>
+                                ),
+                            }}
+                            error={confirmPassword !== '' && confirmPassword !== registerData.password}
+                            helperText={
+                                confirmPassword !== '' && confirmPassword !== registerData.password
+                                    ? 'Passwords do not match'
+                                    : ''
+                            }
+                        />
+
                         <Button
                             type="submit"
                             variant="contained"
@@ -125,7 +163,15 @@ const RegisterPage: React.FC = () => {
                             Register
                         </Button>
                         <Typography variant="body2">
-                            Already have an account? <a href="/login">Login</a>
+                            Already have an account?{" "}
+                            <Button
+                                component={NavLink}
+                                to="/login"
+                                variant="text"
+                                sx={{ textTransform: "none" }}
+                            >
+                                Login
+                            </Button>
                         </Typography>
                     </Box>
                 </Paper>

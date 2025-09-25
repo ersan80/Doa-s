@@ -4,24 +4,29 @@ namespace API.Entity
 {
     public class User
     {
-        [Key] // Primary key
+        [Key]
         public int Id { get; set; }
 
         [Required]
         [StringLength(50)]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         [Required]
         [EmailAddress]
         [StringLength(100)]
-        public string Email { get; set; }
+        public string? Email { get; set; }
 
         [Required]
         [StringLength(200)]
-        // Parola veritabanında düz metin olarak tutulmaz, hashlenmiş halde saklanır.
-        public string PasswordHash { get; set; }
+        public string? PasswordHash { get; set; }
 
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow; // Otomatik oluşturma tarihi
-        public bool IsActive { get; set; } = true; // Kullanıcı pasif mi aktif mi
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public bool IsActive { get; set; } = true;
+
+        // 🔑 EKLEDİKLERİM
+        public bool IsEmailConfirmed { get; set; } = false; // Email doğrulandı mı
+        public string? EmailConfirmationToken { get; set; } // Rastgele token
+        public DateTime? TokenExpiry { get; set; }          // Token geçerlilik süresi
+        public DateTime? ConfirmedAt { get; set; }          // Onaylandığı tarih
     }
 }

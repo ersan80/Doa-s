@@ -2,7 +2,7 @@ using RegistrationApi.DTOs;
 using System.Threading.Tasks;
 
 
-namespace RegistrationApi.Services
+namespace API.Services
 {
     public interface IAuthService
     {

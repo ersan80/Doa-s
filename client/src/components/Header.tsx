@@ -6,7 +6,7 @@ import {
 } from '@mui/material';
 import { NavLink } from 'react-router';
 import { useTheme } from '@mui/material/styles';
-import { createGlobalStyle } from 'styled-components';
+
 
 const links = [
   { title: 'Home', path: '/' },
@@ -14,14 +14,9 @@ const links = [
   { title: 'Contact', path: '/contact' },
   { title: 'Catalog', path: '/catalog' },
 ];
-const authLinks = [{ title: 'Login', path: '/auth' }]
+const authLinks = [{ title: 'Login', path: '/login' }]
 
-const GlobalFont = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
-  body {
-    font-family: 'Poppins', sans-serif;
-  }
-`;
+
 
 export default function Header() {
 
@@ -33,18 +28,18 @@ export default function Header() {
 
   return (
     <>
-      <GlobalFont />
+
       <AppBar position="static" sx={{ mb: 4, backgroundColor: "#fff", fontFamily: 'Poppins, sans-serif', boxShadow: 3 }}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
           <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, mt: 1 }} component={NavLink} to="/">
             <Avatar
               
               src="./logo.svg"
-              alt="DOA'S CEZVE"
+              alt="DOA"
               sx={{
                 width: 56,
                 height: 56,
-                bgcolor: '#8c7373',
+                bgcolor: '#d8c3c3',
                 boxShadow: 2
               }}
             />

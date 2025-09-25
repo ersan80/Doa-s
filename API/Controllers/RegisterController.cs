@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using RegistrationApi.DTOs;
-using RegistrationApi.Services;
+using API.Services;
 using System.ComponentModel.DataAnnotations;
 
 namespace API.Controllers
@@ -9,6 +9,7 @@ namespace API.Controllers
     [Route("api/[controller]")]
     public class RegisterController : ControllerBase
     {
+        
         private readonly IAuthService _authService;
 
         public RegisterController(IAuthService authService)
@@ -21,9 +22,14 @@ namespace API.Controllers
         {
             var validationContext = new ValidationContext(model);
             var validationResults = new List<ValidationResult>();
+
             if (!Validator.TryValidateObject(model, validationContext, validationResults, true))
             {
-                var errorMessage = string.Join(" ", validationResults.Select(r => r.ErrorMessage));
+                var errorMessage = string.Join(" | ", validationResults.Select(r => r.ErrorMessage));
+
+                // 🔹 Buraya log ekle
+                Console.WriteLine("Validation failed: " + errorMessage);
+
                 return BadRequest(new { success = false, message = errorMessage });
             }
 
@@ -34,4 +40,5 @@ namespace API.Controllers
                 : BadRequest(new { success = false, message = result.Message });
         }
     }
+    
 }
