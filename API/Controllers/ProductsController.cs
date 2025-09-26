@@ -23,9 +23,9 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetProduct(int id)
+    public async Task<IActionResult> GetProduct(int? id)
     {
-        if (id == null || id <= 0)
+        if (id  == null || id <= 0)
             return NotFound();
         var product = await _context.Products.FindAsync(id);
         if (product == null)

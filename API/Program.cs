@@ -12,13 +12,18 @@ using API.Config;
 
 var builder = WebApplication.CreateBuilder(args);
 var smtpSection = builder.Configuration.GetSection("SmtpSettings");
+
+var jwtSection = builder.Configuration.GetSection("JwtSettings");
+builder.Services.Configure<JwtSettings>(jwtSection);
+
 builder.Services.Configure<SmtpSettings>(smtpSection);
 builder.Services.AddScoped<IEmailService, EmailService>();
-
+builder.Services.AddLogging(logging => logging.AddConsole());
 // Add services to the container.
+builder.Services.AddLogging(logging => logging.AddConsole());
 builder.Services.AddControllers();
 builder.Services.AddDbContext<DataContext>(options =>
-    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddSingleton<IJwtService, JwtService>();
 
@@ -43,10 +48,16 @@ var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
 {
+    app.UseDeveloperExceptionPage();
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Registration API v1"));
 }
-
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage(); // Bu middleware'i ekle – hataları detaylı gösterir
+    app.UseSwagger();
+    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Registration API v1"));
+}
 // ✅ CORS'u devreye al
 app.UseCors("AllowReactApp");
 

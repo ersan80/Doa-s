@@ -8,6 +8,11 @@ import ProductDetails from "../pages/catalog/ProductDetails";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage"; 
 import ConfirmEmailPage from "../pages/ConfirmEmailPage"; 
+import DashboardPage from "../pages/DashboaardPage";
+import ProtectedRoute from "../components/ProtectedRoute";
+
+
+
 export const router = createBrowserRouter([
 
     {
@@ -21,7 +26,15 @@ export const router = createBrowserRouter([
             { path: "/catalog/:id", element: <ProductDetails /> },
             { path: "/login", element: <LoginPage /> },
             { path: "/register", element: <RegisterPage /> },
-            { path:"/confirm-email", element: <ConfirmEmailPage /> }
+            { path: "/confirm-email", element: <ConfirmEmailPage /> },
+            {
+                path: "/dashboard",
+                element: (
+                    <ProtectedRoute requireVerifiedEmail>
+                        <DashboardPage />
+                    </ProtectedRoute>
+                )
+            }
         ]
     }
 ]);

@@ -36,11 +36,14 @@ namespace API.Controllers
                 return BadRequest(new { success = false, message = "Token has expired" });
 
             user.IsEmailConfirmed = true;
+            user.ConfirmedAt = DateTime.UtcNow;
             user.EmailConfirmationToken = null;
 
             await _context.SaveChangesAsync();
+            // Yönlendirme
+            return Redirect("http://localhost:3000/login?confirmed=true");
 
-            return Ok(new { success = true, message = "Email confirmed successfully" });
+            //return Ok(new { success = true, message = "Email confirmed successfully" });
         }
     }
 }

@@ -17,5 +17,6 @@ namespace RegistrationApi.DTOs
         // [RegularExpression(@"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).+$", 
         //     ErrorMessage = "Password must contain at least one uppercase, one lowercase, and one number")]
         public string? Password { get; set; }
+        public string? ConfirmPassword { get; set; }
     }
 }

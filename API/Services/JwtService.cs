@@ -1,49 +1,47 @@
 using API.Entity;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using API.Config; // JwtSettings için
+using System;
 
 namespace API.Services
 {
-    // Interface
-    
-    // Implementasyon
     public class JwtService : IJwtService
     {
-        private readonly IConfiguration _config;
+        private readonly JwtSettings _jwtSettings;
 
-        public JwtService(IConfiguration config)
+        public JwtService(IOptions<JwtSettings> jwtOptions)
         {
-            _config = config;
+            _jwtSettings = jwtOptions.Value ?? throw new ArgumentNullException(nameof(jwtOptions));
         }
 
         public string GenerateToken(User user)
         {
-            var secret = _config["JwtSettings:Secret"];
-            var issuer = _config["JwtSettings:Issuer"];
-            var audience = _config["JwtSettings:Audience"];
-            var expiryMinutes = int.Parse(_config["JwtSettings:ExpiryMinutes"] ?? "60");
+            if (user == null) throw new ArgumentNullException(nameof(user));
+            if (string.IsNullOrEmpty(_jwtSettings.Secret)) throw new InvalidOperationException("JWT Secret is not configured.");
 
-            var securityKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secret));
-            var credentials = new SigningCredentials(securityKey, SecurityAlgorithms.HmacSha256);
-
-            var claims = new[]
+            var key = Encoding.ASCII.GetBytes(_jwtSettings.Secret);
+            var tokenDescriptor = new SecurityTokenDescriptor
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                new Claim(ClaimTypes.Email, user.Email),
-                new Claim(ClaimTypes.Name, user.Name)
+                Subject = new ClaimsIdentity(new[]
+                {
+                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString() ?? string.Empty),
+                    new Claim(ClaimTypes.Email, user.Email ?? string.Empty)
+                }),
+                Expires = DateTime.UtcNow.AddHours(_jwtSettings.ExpiryInHours > 0 ? _jwtSettings.ExpiryInHours : 1),
+                Issuer = _jwtSettings.Issuer,
+                Audience = _jwtSettings.Audience,
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature)
             };
 
-            var token = new JwtSecurityToken(
-                issuer,
-                audience,
-                claims,
-                expires: DateTime.UtcNow.AddMinutes(expiryMinutes),
-                signingCredentials: credentials);
-
-            return new JwtSecurityTokenHandler().WriteToken(token);
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
         }
     }
 }

@@ -3,6 +3,7 @@ using API.Entity;
 using API.Data;
 using Microsoft.EntityFrameworkCore;
 using System.Security.Cryptography;
+using Microsoft.Extensions.Logging;
 
 namespace API.Services
 {
@@ -10,18 +11,20 @@ namespace API.Services
     {
         private readonly DataContext _context;
         private readonly IEmailService _emailService;
+        private readonly ILogger<AuthService> _logger;
 
-        public AuthService(DataContext context, IEmailService emailService)
+        public AuthService(DataContext context, IEmailService emailService, ILogger<AuthService> logger)
         {
             _context = context;
             _emailService = emailService;
+            _logger = logger;
         }
+
 
         public async Task<AuthResult> RegisterAsync(RegisterDto model)
         {
             var result = new AuthResult();
 
-            // 1. Email zaten var mı kontrolü
             if (await _context.Users.AnyAsync(u => u.Email == model.Email))
             {
                 result.Success = false;
@@ -29,13 +32,8 @@ namespace API.Services
                 return result;
             }
 
-            // 2. Parola hashle
             string passwordHash = BCrypt.Net.BCrypt.HashPassword(model.Password);
-
-            // 3. Token oluştur (URL-safe)
             var token = GenerateEmailConfirmationToken();
-
-            // 4. Kullanıcı nesnesi oluştur
             var user = new User
             {
                 Name = model.Name,
@@ -49,30 +47,28 @@ namespace API.Services
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
-            // 5. Doğrulama linki
-            var confirmationLink = $"https://localhost:3000/confirm-email?token={Uri.EscapeDataString(token)}&email={Uri.EscapeDataString(user.Email)}";
-
-            // 6. Mail gönderimi try-catch ile
+            // API/Services/AuthServices.cs
+            var confirmationLink = $"http://localhost:3000/confirm-email?token={Uri.EscapeDataString(user.EmailConfirmationToken ?? string.Empty)}&email={Uri.EscapeDataString(user.Email ?? string.Empty)}";
             try
             {
                 await _emailService.SendEmailAsync(
                     user.Email,
-                    "Confirm your email",
-                    $"Hello {user.Name},\n\nPlease confirm your email by clicking the link below:\n{confirmationLink}\n\nThis link is valid for 24 hours."
+                    "Confirm Your Email",
+                    $"<h3>Hello {user.Name},</h3><p>Please confirm your email by clicking <a href='{confirmationLink}'>this link</a>.</p><p>This link is valid for 24 hours.</p>"
                 );
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "Failed to send email during registration for {Email}", user.Email);
                 result.Success = false;
-                result.Message = "Email could not be sent: " + ex.Message;
+                result.Message = "Registration successful, but failed to send confirmation email. Please try again later.";
                 return result;
             }
 
             result.Success = true;
             result.Message = "Registration successful. Please check your email to confirm your account.";
             return result;
-        }
-
+        } 
         private string GenerateEmailConfirmationToken()
         {
             var bytes = new byte[32];

@@ -1,73 +1,81 @@
-
-import { useState } from 'react';
-import { toast } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
-    Box, TextField, Button, Typography, Container, Paper
-} from '@mui/material';
-import ToastProvider from './ToastContainer';
-import { Visibility, VisibilityOff } from '@mui/icons-material';
-import { NavLink } from 'react-router';
+    Box,
+    TextField,
+    Button,
+    Typography,
+    Container,
+    Paper,
+    CircularProgress,
+} from "@mui/material";
+import { fetchJson } from "../utils/fetchJson";
+import { showSuccess, showError, showInfo } from "../utils/toastHelper";
+import ToastProvider from "./ToastContainer";
 
 interface RegisterData {
     name: string;
     email: string;
     password: string;
+    confirmPassword: string;
 }
 
-const RegisterPage: React.FC = () => {
-    const [registerData, setRegisterData] = useState<RegisterData>({
-        name: '',
-        email: '',
-        password: ''
+const RegisterPage = () => {
+    const [formData, setFormData] = useState<RegisterData>({
+        name:"",
+        email: "",
+        password: "",
+        confirmPassword: "",
     });
-    const [confirmPassword, setConfirmPassword] = useState<string>('');
-    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [loading, setLoading] = useState(false);
+    const navigate = useNavigate();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
-
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
 
-        if (!registerData.name || !registerData.email || !registerData.password) {
-            toast.error("Please fill all fields.");
+        if (formData.password !== formData.confirmPassword) {
+            showError("Passwords do not match.");
             return;
         }
 
-        if (registerData.password !== confirmPassword) {
-            toast.error('Passwords do not match!', { autoClose: 3000 });
-            return;
-        }
+        setLoading(true);
 
         try {
-            const response = await fetch(`${API_BASE_URL}/Register`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    Name: registerData.name,
-                    Email: registerData.email,
-                    Password: registerData.password
-                })
-            });
+            const data = await fetchJson<{ success: boolean; message?: string; token?: string; isEmailConfirmed?: boolean }>(
+                `${API_BASE_URL}/Register`,
+                {
+                    method: "POST",
+                    body: JSON.stringify({
+                        name: formData.name,
+                        email: formData.email,
+                        password: formData.password,
+                        confirmPassword: formData.confirmPassword
+                    }),
+                }
+            );
 
-            const data = await response.json();
-            console.log(data)
-            if (response.ok && data.success) {
-                toast.success('Register Success!', { autoClose: 3000 });
-                setRegisterData({ name: '', email: '', password: '' });
-                setConfirmPassword('');
+            if (data.success) {
+                showSuccess("Registration successful! 🎉");
+                showInfo("Please confirm your email before logging in.");
+                setFormData({ name: "", email: "", password: "", confirmPassword: "" });
+                
+                console.log("data token = ", data.token)
+
+                // 1-2 sn bekleyip login sayfasına yönlendir
+                setTimeout(() => navigate("/login"), 2000);
             } else {
-                toast.error(data.message || 'Register failed. Please try again.', { autoClose: 3000 });
+                showError(data.message || "Registration failed.");
             }
         } catch (error: unknown) {
-            console.error('Register Error:', error);
-            toast.error('Something went wrong. Please try again later.');
+            if (error instanceof Error) {
+                showError(error.message);
+            } else {
+                showError("Unexpected error occurred.");
+            }
+        } finally {
+            setLoading(false);
         }
-    };
-
-    const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const { name, value } = event.target;
-        setRegisterData(prev => ({ ...prev, [name]: value }));
     };
 
     return (
@@ -77,102 +85,65 @@ const RegisterPage: React.FC = () => {
                     <Box
                         component="form"
                         onSubmit={handleSubmit}
-                        sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
+                        sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}
                     >
                         <Typography component="h1" variant="h5" sx={{ mb: 3 }}>
                             Register
                         </Typography>
-
                         <TextField
-                            label="Full Name"
-                            name="name"
-                            variant="outlined"
-                            required
+                            label="Name"
+                            type="text"
                             fullWidth
+                            required
                             margin="normal"
-                            value={registerData.name}
-                            onChange={handleChange}
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                         />
 
                         <TextField
                             label="E-mail"
-                            name="email"
-                            variant="outlined"
-                            required
+                            type="email"
                             fullWidth
+                            required
                             margin="normal"
-                            value={registerData.email}
-                            onChange={handleChange}
+                            value={formData.email}
+                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                         />
 
                         <TextField
                             label="Password"
-                            name="password"
-                            required
-                            variant="outlined"
+                            type="password"
                             fullWidth
+                            required
                             margin="normal"
-                            type={showPassword ? 'text' : 'password'}
-                            value={registerData.password}
-                            onChange={handleChange}
-                            InputProps={{
-                                endAdornment: (
-                                    <Box
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        sx={{ cursor: 'pointer', mr: 1 }}
-                                    >
-                                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                                    </Box>
-                                ),
-                            }}
+                            value={formData.password}
+                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                         />
 
                         <TextField
                             label="Confirm Password"
-                            required
-                            variant="outlined"
+                            type="password"
                             fullWidth
+                            required
                             margin="normal"
-                            type={showPassword ? 'text' : 'password'}
-                            value={confirmPassword}
-                            onChange={(e) => setConfirmPassword(e.target.value)}
-                            InputProps={{
-                                endAdornment: (
-                                    <Box
-                                        onClick={() => setShowPassword(!showPassword)}
-                                        sx={{ cursor: 'pointer', mr: 1 }}
-                                    >
-                                        {showPassword ? <VisibilityOff /> : <Visibility />}
-                                    </Box>
-                                ),
-                            }}
-                            error={confirmPassword !== '' && confirmPassword !== registerData.password}
-                            helperText={
-                                confirmPassword !== '' && confirmPassword !== registerData.password
-                                    ? 'Passwords do not match'
-                                    : ''
-                            }
+                            value={formData.confirmPassword}
+                            onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
                         />
 
                         <Button
                             type="submit"
                             variant="contained"
                             fullWidth
-                            sx={{ mt: 3, mb: 2, backgroundColor: '#7d6c6c', '&:hover': { backgroundColor: '#5e4f4f' } }}
+                            disabled={loading}
+                            sx={{
+                                mt: 3,
+                                mb: 2,
+                                backgroundColor: "#7d6c6c",
+                                "&:hover": { backgroundColor: "#5e4f4f" },
+                            }}
                         >
-                            Register
+                            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Register"}
                         </Button>
-                        <Typography variant="body2">
-                            Already have an account?{" "}
-                            <Button
-                                component={NavLink}
-                                to="/login"
-                                variant="text"
-                                sx={{ textTransform: "none" }}
-                            >
-                                Login
-                            </Button>
-                        </Typography>
                     </Box>
                 </Paper>
             </Container>

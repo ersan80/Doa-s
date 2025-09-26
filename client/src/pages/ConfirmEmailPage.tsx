@@ -1,11 +1,14 @@
 import { useEffect, useState } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { Container, Typography, CircularProgress, Box } from "@mui/material";
+import { showSuccess, showError } from "../utils/toastHelper";
 
 export default function ConfirmEmailPage() {
     const [params] = useSearchParams();
     const [message, setMessage] = useState("Loading...");
     const [loading, setLoading] = useState(true);
+    const navigate = useNavigate();
+    const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
     useEffect(() => {
         const token = params.get("token");
@@ -14,20 +17,33 @@ export default function ConfirmEmailPage() {
         if (!token || !email) {
             setMessage("Invalid link.");
             setLoading(false);
+            showError("Invalid confirmation link.");
+            setTimeout(() => navigate("/login"), 3000);
             return;
         }
 
-        fetch(`/api/auth/confirm-email?token=${token}&email=${email}`)
-            .then(res => res.text())
-            .then(text => {
-                setMessage(text);
+        fetch(`${API_BASE_URL}/ConfirmEmail?token=${encodeURIComponent(token)}&email=${encodeURIComponent(email)}`)
+            .then((res) => res.json())
+            .then((data) => {
+                console.log(data);
+                
+                setMessage(data.message);
                 setLoading(false);
+                if (data.success) {
+                    showSuccess("Email confirmed successfully!");
+                    setTimeout(() => navigate("/login?confirmed=true"), 2000);
+                } else {
+                    showError(data.message || "Error confirming email.");
+                    setTimeout(() => navigate("/login"), 3000);
+                }
             })
             .catch(() => {
                 setMessage("Error confirming email.");
                 setLoading(false);
+                showError("Something went wrong. Please try again.");
+                setTimeout(() => navigate("/login"), 3000);
             });
-    }, [params]);
+    }, [params, navigate]);
 
     return (
         <Container maxWidth="sm" sx={{ mt: 5 }}>
