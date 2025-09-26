@@ -1,22 +1,15 @@
-export async function fetchJson<T>(
-  url: string,
-  options: RequestInit = {}
-): Promise<T> {
+
+
+export async function fetchJson<T>(url: string, options: RequestInit = {}) {
   const token = localStorage.getItem("token");
 
-  // Headerları birleştir
-  const headers = {
+  const headers: HeadersInit = {
     "Content-Type": "application/json",
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
-    ...options.headers,
+    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
+    ...options.headers
   };
 
   const response = await fetch(url, { ...options, headers });
-
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => null);
-    throw new Error(errorData?.message || `HTTP error! Status: ${response.status}`);
-  }
-
-  return response.json();
+  if (!response.ok) throw new Error(await response.text());
+  return response.json() as Promise<T>;
 }

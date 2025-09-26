@@ -23,7 +23,6 @@ interface LoginData {
 }
 
 const GlobalFont = createGlobalStyle`
-  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
   body {
     font-family: 'Poppins', sans-serif;
   }
@@ -33,7 +32,7 @@ const LoginPage = () => {
     const { login } = useAuth(); // context/AuthContext.tsx’ten geliyor
     const [loginData, setLoginData] = useState<LoginData>({ email: "", password: "" });
     const [showPassword, setShowPassword] = useState<boolean>(false);
-    const [loading, setLoading] = useState<boolean>(false);
+    const [isLoading, setIsLoading] = useState<boolean>(false);
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
     const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
@@ -46,7 +45,7 @@ const LoginPage = () => {
 
     const handleSubmit = async (event: React.FormEvent) => {
         event.preventDefault();
-        setLoading(true);
+        setIsLoading(true);
 
         try {
             const data = await fetchJson<{
@@ -59,23 +58,24 @@ const LoginPage = () => {
                 method: "POST",
                 body: JSON.stringify(loginData),
             });
-
             if (data.success && data.token) {
                 login({ email: data.email, token: data.token, emailConfirmed: true });
                 showSuccess("Entry Success 🎉");
                 setLoginData({ email: "", password: "" });
-                setTimeout(() => navigate("/dashboard"), 1000);
+                navigate("/dashboard", { replace: true });
             } else {
                 showError(data.message || "Entry failed. Please try again.");
             }
         } catch (error: unknown) {
+            console.log(error)
             if (error instanceof Error) {
+
                 showError(error.message || "Server error, please try again later.");
             } else {
                 showError("Server error, please try again later.");
             }
         } finally {
-            setLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -127,7 +127,7 @@ const LoginPage = () => {
                             type="submit"
                             variant="contained"
                             fullWidth
-                            disabled={loading}
+                            disabled={isLoading}
                             sx={{
                                 mt: 3,
                                 mb: 2,
@@ -135,7 +135,7 @@ const LoginPage = () => {
                                 "&:hover": { backgroundColor: "#5e4f4f" },
                             }}
                         >
-                            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Login"}
+                            {isLoading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Login"}
                         </Button>
                         <Typography variant="body2">
                             Don't have an account?{" "}

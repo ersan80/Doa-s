@@ -1,51 +1,52 @@
-import { createContext, useContext, useState, useEffect } from "react";
-
-export interface User {
-    email: string;
-    token: string;
-    emailConfirmed: boolean;
-}
+import React, { createContext, useContext, ReactNode, useState } from "react";
 
 interface AuthContextType {
-    user: User | null;
-    login: (userData: User) => void;
+    token: string | null;
+    email: string | null;
+    emailConfirmed: boolean;
+    login: (data: { token: string; email: string; emailConfirmed: boolean }) => void;
     logout: () => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+    token: null,
+    email: null,
+    emailConfirmed: false,
+    login: () => { },
+    logout: () => { },
+});
 
-export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-    const [user, setUser] = useState<User | null>(null);
+export const AuthProvider = ({ children }: { children: ReactNode }) => {
+    const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
+    const [email, setEmail] = useState<string | null>(() => localStorage.getItem("email"));
+    const [emailConfirmed, setEmailConfirmed] = useState<boolean>(() => {
+        const stored = localStorage.getItem("emailConfirmed");
+        return stored === "true";
+    });
 
-    // ✅ Sayfa yenilense bile kullanıcıyı hatırlamak için localStorage kullanıyoruz
-    useEffect(() => {
-        const storedUser = localStorage.getItem("user");
-        if (storedUser) {
-            setUser(JSON.parse(storedUser));
-        }
-    }, []);
-
-    const login = (userData: User) => {
-        setUser(userData);
-        localStorage.setItem("user", JSON.stringify(userData));
+    const login = ({ token, email, emailConfirmed }: { token: string; email: string; emailConfirmed: boolean }) => {
+        localStorage.setItem("token", token);
+        localStorage.setItem("email", email);
+        localStorage.setItem("emailConfirmed", String(emailConfirmed));
+        setToken(token);
+        setEmail(email);
+        setEmailConfirmed(emailConfirmed);
     };
 
     const logout = () => {
-        setUser(null);
-        localStorage.removeItem("user");
+        localStorage.removeItem("token");
+        localStorage.removeItem("email");
+        localStorage.removeItem("emailConfirmed");
+        setToken(null);
+        setEmail(null);
+        setEmailConfirmed(false);
     };
 
     return (
-        <AuthContext.Provider value={{ user, login, logout }}>
+        <AuthContext.Provider value={{ token, email, emailConfirmed, login, logout }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
-export const useAuth = (): AuthContextType => {
-    const context = useContext(AuthContext);
-    if (!context) {
-        throw new Error("useAuth must be used within an AuthProvider");
-    }
-    return context;
-};
+export const useAuth = () => useContext(AuthContext);

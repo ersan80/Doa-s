@@ -6,25 +6,31 @@ interface User {
   isEmailConfirmed: boolean;
 }
 
-export function useUser() {
+export function useUser(token: string | null) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!token) { 
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     async function fetchUser() {
       try {
-        const data = await fetchJson<User>(`${import.meta.env.VITE_API_BASE_URL}/Auth/me`);
+        const data = await fetchJson<User>(`${import.meta.env.VITE_API_BASE_URL}/User`);
         setUser(data);
-      } catch (error: unknown) {
-          if (error instanceof Error) {
-              setUser(null)
-          }; // Token yoksa veya geçersizse}
+      } catch (err: unknown) {
+        console.error(err);
+        setUser(null);
       } finally {
         setLoading(false);
       }
     }
+
     fetchUser();
-  }, []);
+  }, [token]);
 
   return { user, loading };
 }

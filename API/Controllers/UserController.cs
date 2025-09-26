@@ -1,13 +1,19 @@
-using API.Data;
-using API.Entity;
-using Microsoft.AspNetCore.Authorization;
+using Infrastructure.Data;
+using Infrastructure.Entity;
+using Application.Interfaces;
+using Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 
 namespace API.Controllers
 {
-    [Route("api/[controller]")]
     [ApiController]
+    [Route("api/[controller]")]
     public class UserController : ControllerBase
     {
         private readonly DataContext _context;
@@ -17,8 +23,8 @@ namespace API.Controllers
             _context = context;
         }
 
+        [HttpGet]
         [Authorize]
-        [HttpGet("me")]
         public async Task<IActionResult> GetCurrentUser()
         {
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
@@ -32,6 +38,13 @@ namespace API.Controllers
                 user.Email,
                 user.IsEmailConfirmed
             });
+        }
+
+        [HttpGet("all")]
+        public async Task<IActionResult> GetUsers()
+        {
+            var users = await _context.Users.ToListAsync();
+            return Ok(users);
         }
     }
 }

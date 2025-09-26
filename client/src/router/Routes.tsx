@@ -8,7 +8,7 @@ import ProductDetails from "../pages/catalog/ProductDetails";
 import LoginPage from "../pages/LoginPage";
 import RegisterPage from "../pages/RegisterPage"; 
 import ConfirmEmailPage from "../pages/ConfirmEmailPage"; 
-import DashboardPage from "../pages/DashboaardPage";
+import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "../components/ProtectedRoute";
 
 

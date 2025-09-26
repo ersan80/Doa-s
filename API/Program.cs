@@ -1,44 +1,64 @@
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Sqlite; // Eklendi
-using API.Data;
-using API.Services;
-using RegistrationApi.DTOs;
 using Microsoft.OpenApi.Models;
-using Swashbuckle.AspNetCore.SwaggerGen;
-using Swashbuckle.AspNetCore.SwaggerUI;
-using System.ComponentModel.DataAnnotations;
-using API.Config;
-
+using Application.Services;
+using Application.Interfaces;
+using Application.Config;
+using Infrastructure.Data;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
-var smtpSection = builder.Configuration.GetSection("SmtpSettings");
 
-var jwtSection = builder.Configuration.GetSection("JwtSettings");
-builder.Services.Configure<JwtSettings>(jwtSection);
+// Konfigürasyonları bağla
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("JwtSettings"));
+builder.Services.Configure<SmtpSettings>(builder.Configuration.GetSection("SmtpSettings"));
 
-builder.Services.Configure<SmtpSettings>(smtpSection);
-builder.Services.AddScoped<IEmailService, EmailService>();
-builder.Services.AddLogging(logging => logging.AddConsole());
-// Add services to the container.
+// JWT Authentication
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+if (jwtSettings == null || string.IsNullOrEmpty(jwtSettings.Key))
+{
+    throw new Exception("JWT Settings missing in appsettings.json!");
+}
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+}).AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings?.Issuer,
+        ValidAudience = jwtSettings?.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings?.Key!))
+    };
+});
+
+// Servisleri ekle
 builder.Services.AddLogging(logging => logging.AddConsole());
 builder.Services.AddControllers();
 builder.Services.AddDbContext<DataContext>(options =>
-options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlite(builder.Configuration.GetConnectionString("DefaultConnection")));
 builder.Services.AddScoped<IAuthService, AuthService>();
-builder.Services.AddSingleton<IJwtService, JwtService>();
+builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.AddScoped<IEmailService, EmailService>();
 
-// ✅ CORS Politikası ekle
+// CORS Politikası
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowReactApp", policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // React uygulamanın URL'si
+        policy.WithOrigins("http://localhost:3000")
               .AllowAnyHeader()
               .AllowAnyMethod();
     });
 });
-builder.Services.AddScoped<IEmailService, EmailService>();
 
+// Swagger
 builder.Services.AddSwaggerGen(c =>
 {
     c.SwaggerDoc("v1", new OpenApiInfo { Title = "Registration API", Version = "v1" });
@@ -52,19 +72,10 @@ if (app.Environment.IsDevelopment())
     app.UseSwagger();
     app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Registration API v1"));
 }
-if (app.Environment.IsDevelopment())
-{
-    app.UseDeveloperExceptionPage(); // Bu middleware'i ekle – hataları detaylı gösterir
-    app.UseSwagger();
-    app.UseSwaggerUI(c => c.SwaggerEndpoint("/swagger/v1/swagger.json", "Registration API v1"));
-}
-// ✅ CORS'u devreye al
+
 app.UseCors("AllowReactApp");
-
+app.UseAuthentication();
 app.UseAuthorization();
-
-app.MapControllers();
 app.UseStaticFiles();
-
-
+app.MapControllers();
 app.Run();

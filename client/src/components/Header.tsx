@@ -6,6 +6,8 @@ import {
 } from '@mui/material';
 import { NavLink } from 'react-router';
 import { useTheme } from '@mui/material/styles';
+import { useUser } from '../hooks/useUser'; 
+import { useAuth } from '../context/AuthContext';
 
 
 const links = [
@@ -19,7 +21,11 @@ const authLinks = [{ title: 'Login', path: '/login' }]
 
 
 export default function Header() {
-
+  const { token } = useAuth();
+  const { user } = useUser(token);
+  console.log(user);
+  const { logout } = useAuth();
+  console.log(user)
   const [drawerOpen, setDrawerOpen] = useState(false); // Menü için
   const [userDrawerOpen, setUserDrawerOpen] = useState(false); // Kullanıcı için
   const theme = useTheme();
@@ -86,7 +92,7 @@ export default function Header() {
             </Box>
             <Avatar
               src="./profile.jpg" // Profil resminizin yolunu buraya yazın
-              alt=""
+              alt={user?.email}
               sx={{
                 width: 40,
                 height: 40,
@@ -170,19 +176,24 @@ export default function Header() {
           }
         }}
       >
-        <Box sx={{ p: 2 }}>
+        <Box sx={{ p: 2 }} >
           <Avatar
             src="./profile.jpg"
-            alt=""
+            alt={user?.email}
             sx={{
-              width: 80,
-              height: 80,
+              width: 60,
+              height: 60,
               margin: "0 auto",
               bgcolor: '#8c7373',
               mb: 2,
             }}
+            onClick={() => {
+              setUserDrawerOpen(false);
+            }}
           />
-          <List>
+          <List onClick={() => {
+            setUserDrawerOpen(false);
+          }}>
             <ListItem
               component={NavLink}
               to={links[0].path} // Tüm Siparişlerim sayfasının yolu
@@ -236,6 +247,28 @@ export default function Header() {
               <ListItemText  primary="Help" />
             </ListItem>
           </List>
+          <List>
+            <ListItem
+              component={NavLink}
+              to="/dashboard"
+              sx={{ cursor: 'pointer', "&:hover .MuiListItemText-primary": { color: brandBrown } }}
+              onClick={() => setUserDrawerOpen(false)}
+            >
+              <ListItemText primary="Dashboard" />
+            </ListItem>
+
+            <ListItem
+              sx={{ cursor: 'pointer', "&:hover .MuiListItemText-primary": { color: brandBrown } }}
+              onClick={() => {
+                logout(); // token ve email temizlendi
+                setUserDrawerOpen(false);
+                window.location.href = "/login"; // login sayfasına yönlendir
+              }}
+            >
+              <ListItemText primary="Logout" />
+            </ListItem>
+          </List>
+
         </Box>
       </Drawer>
     </>

@@ -1,24 +1,21 @@
-import { Navigate } from "react-router";
-import { useAuth } from "../context/AuthContext";
+import { useUser } from "../hooks/useUser";
+import { Navigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext"; 
 
-type ProtectedRouteProps = {
-    children: React.ReactNode;
+interface ProtectedRouteProps {
+    children: JSX.Element;
     requireVerifiedEmail?: boolean;
+}
+
+const ProtectedRoute = ({ children, requireVerifiedEmail = false }: ProtectedRouteProps) => {
+    const {token } = useAuth()
+    const { user, loading } = useUser(token);
+
+    if (loading) return <div>Loading...</div>;
+    if (!user) return <Navigate to="/login" replace />;
+    if (requireVerifiedEmail && !user.isEmailConfirmed) return <Navigate to="/login" replace />;
+
+    return children;
 };
 
-export default function ProtectedRoute({
-    children,
-    requireVerifiedEmail = false,
-}: ProtectedRouteProps) {
-    const { user } = useAuth();
-
-    if (!user) {
-        return <Navigate to="/login" replace />;
-    }
-
-    if (requireVerifiedEmail && !user?.emailConfirmed) {
-        return <Navigate to="/confirm-email" replace />;
-    }
-
-    return <>{children}</>;
-}
+export default ProtectedRoute;
