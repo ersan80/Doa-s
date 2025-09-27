@@ -35,6 +35,7 @@ namespace API.Controllers
 
             return Ok(new
             {
+                user.Name,
                 user.Email,
                 user.IsEmailConfirmed
             });

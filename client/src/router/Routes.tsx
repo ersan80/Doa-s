@@ -10,7 +10,7 @@ import RegisterPage from "../pages/RegisterPage";
 import ConfirmEmailPage from "../pages/ConfirmEmailPage"; 
 import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "../components/ProtectedRoute";
-
+import AllOrderPage from "../pages/AllOrdersPage";
 
 
 export const router = createBrowserRouter([
@@ -32,9 +32,16 @@ export const router = createBrowserRouter([
                 element: (
                     <ProtectedRoute requireVerifiedEmail>
                         <DashboardPage />
-                    </ProtectedRoute>
-                )
+                    </ProtectedRoute>)
+            }, 
+
+            {
+                path: "/orders", element: (
+                    <ProtectedRoute requireVerifiedEmail>
+                        <AllOrderPage/>
+                    </ProtectedRoute>)
             }
+
         ]
     }
 ]);

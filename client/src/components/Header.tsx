@@ -1,274 +1,137 @@
 import { useState } from 'react';
-import { ShoppingCart, Menu as MenuIcon } from '@mui/icons-material';
+import { ShoppingCart, Menu as MenuIcon, Logout, Dashboard, Help, Info, ListAlt } from '@mui/icons-material';
 import {
-  AppBar, Badge, Box, Button, Drawer, IconButton, List, ListItem, ListItemText,
-  Stack, Toolbar, useMediaQuery, Avatar, Divider
+  AppBar, Badge, Box, Button, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText,
+  Stack, Toolbar, useMediaQuery, Avatar, Divider, Popover, Typography
 } from '@mui/material';
-import { NavLink } from 'react-router';
+import { NavLink } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
-import { useUser } from '../hooks/useUser'; 
+import { useUser } from '../hooks/useUser';
 import { useAuth } from '../context/AuthContext';
 
-
-const links = [
-  { title: 'Home', path: '/' },
-  { title: 'About', path: '/about' },
-  { title: 'Contact', path: '/contact' },
-  { title: 'Catalog', path: '/catalog' },
-];
-const authLinks = [{ title: 'Login', path: '/login' }]
-
-
+interface DrawerLink {
+  title: string;
+  path?: string;
+  icon?: JSX.Element;
+  action?: () => void;
+}
 
 export default function Header() {
-  const { token } = useAuth();
+  const { token, logout } = useAuth();
   const { user } = useUser(token);
-  console.log(user);
-  const { logout } = useAuth();
-  console.log(user)
-  const [drawerOpen, setDrawerOpen] = useState(false); // Menü için
-  const [userDrawerOpen, setUserDrawerOpen] = useState(false); // Kullanıcı için
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
   const brandBrown = '#7d6c6c';
 
+  const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+
+  const handleClose = () => setAnchorEl(null);
+
+  const drawerLinks: DrawerLink[] = token ? [
+    { title: 'All Orders', path: '/orders', icon: <ListAlt /> },
+    { title: 'User Info', path: '/profile', icon: <Info /> },
+    { title: 'Help', path: '/help', icon: <Help /> },
+    { title: 'Dashboard', path: '/dashboard', icon: <Dashboard /> },
+    { title: 'Logout', icon: <Logout />, action: () => { logout(); window.location.href = '/login'; } },
+  ] : [
+    { title: 'Login', path: '/login', icon: <Info /> },
+    { title: 'Sign Up', path: '/register', icon: <ListAlt /> },
+  ];
+
+  const renderDrawerItem = (item: DrawerLink, idx: number) => (
+    <ListItem
+      key={idx}
+      onClick={() => {
+        if (item.action) item.action();
+        handleClose();
+      }}
+      component={item.path ? NavLink : 'div'}
+      to={item.path || ''}
+      sx={{
+        '&:hover': { backgroundColor: '#f0f0f0' },
+        '& .MuiListItemIcon-root': { color: brandBrown },
+        '& .MuiListItemText-primary': { fontWeight: 500 }
+      }}
+    >
+      {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
+      <ListItemText primary={item.title} />
+    </ListItem>
+  );
+
   return (
     <>
-
       <AppBar position="static" sx={{ mb: 4, backgroundColor: "#fff", fontFamily: 'Poppins, sans-serif', boxShadow: 3 }}>
         <Toolbar sx={{ display: "flex", justifyContent: "space-between" }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', mb: 1, mt: 1 }} component={NavLink} to="/">
-            <Avatar
-              
-              src="./logo.svg"
-              alt="DOA"
-              sx={{
-                width: 56,
-                height: 56,
-                bgcolor: '#d8c3c3',
-                boxShadow: 2
-              }}
-            />
+          <Box sx={{ display: 'flex', alignItems: 'center' }} component={NavLink} to="/">
+            <Avatar src="./logo.svg" alt="DOA" sx={{ width: 56, height: 56, bgcolor: '#d8c3c3', boxShadow: 2 }} />
           </Box>
+
           {!isMobile && (
             <Stack direction="row" spacing={3} marginLeft={2} flexGrow={1}>
-              {links.map(link =>
-                <Button
-                  component={NavLink}
-                  to={link.path}
-                  key={link.title}
-                  sx={{
-                    color: '#000',
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    fontSize: '1rem',
-                    "&.active": { color: brandBrown, fontWeight: 700 },
-                    "&:hover": { color: brandBrown },
-                  }}
-                >
-                  {link.title}
-                </Button>
-              )}
+              {['Home', 'About', 'Contact', 'Catalog'].map((title, idx) => (
+                <Button key={idx} component={NavLink} to={`/${title.toLowerCase()}`} sx={{
+                  color: '#000',
+                  textTransform: 'none',
+                  fontWeight: 500,
+                  fontSize: '1rem',
+                  '&.active': { color: brandBrown, fontWeight: 700 },
+                  '&:hover': { color: brandBrown },
+                }}>{title}</Button>
+              ))}
             </Stack>
           )}
 
           <Stack direction="row" spacing={1} alignItems="center">
-            <Box sx={{ display: 'flex', alignItems: 'center' }}>
-              <IconButton size='large' edge="start" color='inherit'>
-                <Badge sx={{ "& .MuiBadge-badge": { backgroundColor: brandBrown } }} badgeContent={2} color="secondary">
-                  <ShoppingCart sx={{ color: "#000" }} />
-                </Badge>
+            <IconButton size='large'>
+              <Badge badgeContent={2} sx={{ "& .MuiBadge-badge": { backgroundColor: brandBrown } }}>
+                <ShoppingCart sx={{ color: "#000" }} />
+              </Badge>
+            </IconButton>
+            {isMobile ? (
+              <IconButton onClick={() => setDrawerOpen(true)}>
+                <MenuIcon />
               </IconButton>
-              {isMobile && (
-                <IconButton
-                  edge="end"
-                  size='large'
-                  sx={{ ml: 1, color: '#000' }}
-                  onClick={() => setDrawerOpen(true)}
+            ) : (
+              <Box>
+                <Avatar
+                  src="./profile.jpg"
+                  alt={user?.email}
+                  sx={{ width: 40, height: 40, cursor: 'pointer', '&:hover': { boxShadow: 2 } }}
+                  onClick={handleAvatarClick}
+                />
+                <Popover
+                  open={Boolean(anchorEl)}
+                  anchorEl={anchorEl}
+                  onClose={handleClose}
+                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
+                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
                 >
-                  <MenuIcon />
-                </IconButton>
-              )}
-            </Box>
-            <Avatar
-              src="./profile.jpg" // Profil resminizin yolunu buraya yazın
-              alt={user?.email}
-              sx={{
-                width: 40,
-                height: 40,
-                cursor: 'pointer',
-                '&:hover': { boxShadow: 2 },
-              }}
-              onClick={() => setUserDrawerOpen(true)}
-            />
+                  <Box sx={{ p: 2, minWidth: 220 }}>
+                    {token && (
+                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>
+                        welcome, {user?.name}
+                      </Typography>
+                    )}
+                    <Divider sx={{ mb: 1 }} />
+                    <List>{drawerLinks.map(renderDrawerItem)}</List>
+                  </Box>
+                </Popover>
+              </Box>
+            )}
           </Stack>
         </Toolbar>
       </AppBar>
 
-      {/* Menü Drawer (Mobil için) */}
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        PaperProps={{
-          sx: {
-            width: 260,
-            backgroundColor: "#fbfbfb",
-            boxShadow: 3,
-          }
-        }}
-      >
-        <Box sx={{ p: 2 }}>
-          <Avatar
-            src="./logo.svg"
-            alt="DOA'S CEZVE"
-            sx={{
-              width: 72,
-              height: 72,
-              margin: "0 auto",
-              bgcolor: 'white',
-              border: '2px solid #fff',
-              boxShadow: 2,
-              mb: 2
-            }}
-          />
+      {/* Mobil Drawer */}
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
+        <Box sx={{ width: 260, p: 2 }}>
+          <Avatar src="./logo.svg" alt="DOA'S CEZVE" sx={{ width: 72, height: 72, m: "0 auto", mb: 2 }} />
           <Divider />
-          <List sx={{ mt: 1 }}>
-            {links.map(link => (
-              <ListItem
-                key={link.title}
-                component={NavLink}
-                to={link.path}
-                onClick={() => setDrawerOpen(false)}
-                sx={{
-                  "& .MuiListItemText-primary": {
-                    fontSize: "1rem",
-                    fontWeight: 500,
-                    color: '#000',
-                    transition: 'color 0.2s ease',
-                  },
-                  "&.active .MuiListItemText-primary": {
-                    color: brandBrown,
-                    fontWeight: 700,
-                  },
-                  "&:hover .MuiListItemText-primary": {
-                    color: brandBrown,
-                  },
-                }}
-              >
-                <ListItemText primary={link.title} />
-              </ListItem>
-            ))}
-          </List>
-        </Box>
-      </Drawer>
-
-      {/* Kullanıcı Bilgileri Drawer */}
-      <Drawer
-        anchor="right"
-        open={userDrawerOpen}
-        onClose={() => setUserDrawerOpen(false)}
-        PaperProps={{
-          sx: {
-            width: 300,
-            backgroundColor: "#fff",
-            boxShadow: 3,
-          }
-        }}
-      >
-        <Box sx={{ p: 2 }} >
-          <Avatar
-            src="./profile.jpg"
-            alt={user?.email}
-            sx={{
-              width: 60,
-              height: 60,
-              margin: "0 auto",
-              bgcolor: '#8c7373',
-              mb: 2,
-            }}
-            onClick={() => {
-              setUserDrawerOpen(false);
-            }}
-          />
-          <List onClick={() => {
-            setUserDrawerOpen(false);
-          }}>
-            <ListItem
-              component={NavLink}
-              to={links[0].path} // Tüm Siparişlerim sayfasının yolu
-              sx={{
-                "&:hover .MuiListItemText-primary": {
-                  color: brandBrown,
-                },
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                // Tüm Siparişlerim sayfasına yönlendirme (örnek URL)
-                setUserDrawerOpen(false);
-
-              }}
-            >
-              <ListItemText primary="All Orders" />
-            </ListItem>
-            <ListItem
-              component={NavLink}
-
-              to={authLinks[0].path}
-              sx={{
-                "&:hover .MuiListItemText-primary": {
-                  color: brandBrown,
-                },
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                
-                setUserDrawerOpen(false);
-
-              }}
-            >
-              <ListItemText primary="User Info" />
-            </ListItem>
-            <ListItem 
-              component={NavLink}
-              to={links[0].path} // Yardım sayfasının yolu
-              sx={{
-                "&:hover .MuiListItemText-primary": {
-                  color: brandBrown,
-                },
-                cursor: 'pointer',
-              }}
-              onClick={() => {
-                // Yardım sayfasına yönlendirme (örnek URL)
-
-                setUserDrawerOpen(false);
-              }}
-            >
-              <ListItemText  primary="Help" />
-            </ListItem>
-          </List>
-          <List>
-            <ListItem
-              component={NavLink}
-              to="/dashboard"
-              sx={{ cursor: 'pointer', "&:hover .MuiListItemText-primary": { color: brandBrown } }}
-              onClick={() => setUserDrawerOpen(false)}
-            >
-              <ListItemText primary="Dashboard" />
-            </ListItem>
-
-            <ListItem
-              sx={{ cursor: 'pointer', "&:hover .MuiListItemText-primary": { color: brandBrown } }}
-              onClick={() => {
-                logout(); // token ve email temizlendi
-                setUserDrawerOpen(false);
-                window.location.href = "/login"; // login sayfasına yönlendir
-              }}
-            >
-              <ListItemText primary="Logout" />
-            </ListItem>
-          </List>
-
+          <List>{drawerLinks.map(renderDrawerItem)}</List>
         </Box>
       </Drawer>
     </>

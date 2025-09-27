@@ -40,6 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setToken(null);
         setEmail(null);
         setEmailConfirmed(false);
+        window.location.href = "/catalog"
     };
 
     return (
