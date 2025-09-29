@@ -3,14 +3,15 @@ import { IProduct } from '../../model/IProduct';
 import ProductList from './ProductList';
 
 
-
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 export default function CatalogPage() {
 
     const [products, setProducts] = useState<IProduct[]>([]);
+    
 
     useEffect(() => {
 
-        fetch("http://localhost:5126/api/Products").then(res => res.json()).then(data => {
+        fetch(`${API_BASE_URL}/Products`).then(res => res.json()).then(data => {
             console.log(data);
             setProducts(data)
         })

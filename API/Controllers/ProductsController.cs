@@ -1,8 +1,14 @@
-using API.Data;
-using API.Entity;
+using Infrastructure.Data;
+using Infrastructure.Entity;
+using Application.Interfaces;
+using Application.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-
+using Microsoft.AspNetCore.Authorization;
+using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Security.Claims;
 namespace API.Controllers;
 
 [ApiController]
@@ -22,9 +28,9 @@ public class ProductsController : ControllerBase
         return Ok(products);
     }
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetProduct(int id)
+    public async Task<IActionResult> GetProduct(int? id)
     {
-        if (id == null || id <= 0)
+        if (id  == null || id <= 0)
             return NotFound();
         var product = await _context.Products.FindAsync(id);
         if (product == null)

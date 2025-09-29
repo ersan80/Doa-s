@@ -1,20 +1,21 @@
-using API.Entity;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Infrastructure.Internal;
+using Infrastructure.Entity;
 
-namespace API.Data;
-
-public class DataContext(DbContextOptions options) : DbContext(options)
+namespace Infrastructure.Data
 {
-    public DbSet<Product> Products { get; set; }
-
-    protected override void OnModelCreating(ModelBuilder modelBuilder)
+    public class DataContext : DbContext
     {
-        base.OnModelCreating(modelBuilder);
+        public DataContext(DbContextOptions<DataContext> options) : base(options) { }
 
-        modelBuilder.Entity<Product>().HasData(
-            new List<Product>
-            {
+        public DbSet<User> Users { get; set; }
+        public DbSet<Product> Products { get; set; }
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Product entity'leri için başlangıç verileri
+            modelBuilder.Entity<Product>().HasData(
                 new Product
                 {
                     Id = 1,
@@ -84,9 +85,8 @@ public class DataContext(DbContextOptions options) : DbContext(options)
                     IsActive = true,
                     ImageUrl = "7.jpg",
                     Stock = 20
-                },
-
-
-            });
+                }
+            );
+        }
     }
 }

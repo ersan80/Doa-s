@@ -5,7 +5,14 @@ import ContactPage from "../pages/ContactPage";
 import App from "../components/App";
 import CatalogPage from "../pages/catalog/CatalogPage";
 import ProductDetails from "../pages/catalog/ProductDetails";
-import AuthPage from "../pages/AuthPage";
+import LoginPage from "../pages/LoginPage";
+import RegisterPage from "../pages/RegisterPage"; 
+import ConfirmEmailPage from "../pages/ConfirmEmailPage"; 
+import DashboardPage from "../pages/DashboardPage";
+import ProtectedRoute from "../components/ProtectedRoute";
+import AllOrderPage from "../pages/AllOrdersPage";
+
+
 export const router = createBrowserRouter([
 
     {
@@ -17,7 +24,24 @@ export const router = createBrowserRouter([
             { path: "/contact", element: <ContactPage /> },
             { path: "/catalog", element: <CatalogPage /> },
             { path: "/catalog/:id", element: <ProductDetails /> },
-            {path: "/auth", element: <AuthPage />   }
+            { path: "/login", element: <LoginPage /> },
+            { path: "/register", element: <RegisterPage /> },
+            { path: "/confirm-email", element: <ConfirmEmailPage /> },
+            {
+                path: "/dashboard",
+                element: (
+                    <ProtectedRoute requireVerifiedEmail>
+                        <DashboardPage />
+                    </ProtectedRoute>)
+            }, 
+
+            {
+                path: "/orders", element: (
+                    <ProtectedRoute requireVerifiedEmail>
+                        <AllOrderPage/>
+                    </ProtectedRoute>)
+            }
+
         ]
     }
 ]);
