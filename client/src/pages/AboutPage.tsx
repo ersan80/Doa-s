@@ -5,12 +5,7 @@ export default function AboutPage() {
         <Typography variant="h3" color="primary">
             About Page
         </Typography>
-          <Typography variant="h3" color="primary">
-            About Page
-        </Typography>      
-                  <Typography variant="h3" color="primary">
-            About Page
-        </Typography>      
+  
         </Stack>
 
     )
