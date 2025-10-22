@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251022132521_UpdateSeededProduct")]
+    partial class UpdateSeededProduct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -59,42 +62,62 @@ namespace Infrastructure.Migrations
                         new
                         {
                             Id = 2,
-                            Description = "Rooted in tradition and built for daily ritual, this cezve is crafted for consistent balance and a timeless silhouette. Its smooth surface and graceful lines reflect the beauty of simplicity — a faithful companion for everyday Turkish coffee brewing. Made from 1 mm solid copper and lined with pure tin, it offers reliable heat distribution and a smooth brewing experience. Lightweight yet enduring, it represents the pure essence of the Turkish coffee craft — elegant, consistent, and built to last. This is more than a coffee pot — it’s a daily expression of heritage, made to bring authentic coffee moments to every home.",
-                            ImageUrl = "classic_copper.jpeg",
+                            Description = "Description for product 2",
+                            ImageUrl = "2.jpg",
                             IsActive = true,
-                            Name = "Classic Copper Cezve — Traditional Form (1 mm)",
-                            Price = 50.00m,
+                            Name = "Product 2",
+                            Price = 20.99m,
                             Stock = 50
                         },
                         new
                         {
                             Id = 3,
-                            Description = "Forged with both precision and artistry, this cezve begins with a carefully shaped copper form, then comes to life through hand-hammering and detailed finishing by skilled artisans. Each piece carries its own subtle variations in texture a perfect balance between craftsmanship and consistency. Made from 1.5 mm solid copper and lined with pure tin, it delivers exceptional heat control,durability, and depth of flavor.No two are exactly alike — every cezve bears the signature touch of its maker, blending heritage and refinement in every curve. This is more than a coffee pot — it’s craftsmanship with precision, created to honor both tradition and modernity.",
-                            ImageUrl = "heritage.jpeg",
+                            Description = "Description for product 3",
+                            ImageUrl = "3.jpg",
                             IsActive = true,
-                            Name = "Heritage Copper Cezve — Hand-Finished (1.5 mm)",
-                            Price = 65.00m,
-                            Stock = 50
+                            Name = "Product 3",
+                            Price = 15.49m,
+                            Stock = 0
                         },
                         new
                         {
                             Id = 4,
-                            Description = "Trabzon Handcrafted Copper Cezve Forged by hand on the Black Sea coast, this cezve is crafted entirely without molds each one unique in form, balance, and soul. Every curve, every hammer mark reflects the rhythm of its maker, a master coppersmith from Trabzon continuing a tradition that has shaped copper for centuries. Made from 1.5 mm solid copper and lined with pure tin, it offers precise heat control and exceptional durability — designed for the smooth, rich foam of authentic Turkish coffee. No two are ever the same. This is more than a coffee pot — it’s a living piece of craftsmanship, where tradition meets individuality.",
-                            ImageUrl = "trabzon.jpeg",
+                            Description = "Description for product 4",
+                            ImageUrl = "4.jpg",
                             IsActive = true,
-                            Name = "Trabzon Handcrafted Copper Cezve",
-                            Price = 75.00m,
+                            Name = "Product 4",
+                            Price = 5.99m,
                             Stock = 200
                         },
                         new
                         {
                             Id = 5,
-                            Description = "Each piece in this handcrafted copper coffee pot set is forged by skilled artisans, carrying forward the timeless ritual of Turkish coffee with modern elegance. Made from pure copper with a tin lined interior and solid brass handle, this set ensures even heat distribution and long - lasting quality. Perfect for those who value craftsmanship and authenticity in every brew.",
-                            ImageUrl = "mix_set.jpeg",
+                            Description = "Description for product 5",
+                            ImageUrl = "5.jpg",
                             IsActive = true,
-                            Name = "Handcrafted Copper Coffee Pot Set (3 pcs) Tradition Meets Elegance",
-                            Price = 200.00m,
+                            Name = "Product 5",
+                            Price = 8.75m,
                             Stock = 80
+                        },
+                        new
+                        {
+                            Id = 6,
+                            Description = "Description for product 6",
+                            ImageUrl = "6.jpg",
+                            IsActive = false,
+                            Name = "Product 6",
+                            Price = 12.00m,
+                            Stock = 150
+                        },
+                        new
+                        {
+                            Id = 7,
+                            Description = "Description for product 7",
+                            ImageUrl = "7.jpg",
+                            IsActive = true,
+                            Name = "Product 7",
+                            Price = 30.00m,
+                            Stock = 20
                         });
                 });
 
