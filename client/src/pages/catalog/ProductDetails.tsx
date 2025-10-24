@@ -1,4 +1,4 @@
-import { Grid, Typography,Divider, TableBody, TableContainer,Table ,TableRow,TableCell } from "@mui/material";
+import { Grid, Typography, Divider, TableBody, TableContainer, Table, TableRow, TableCell } from "@mui/material";
 import { useEffect, useState } from "react";
 import { useParams } from "react-router";
 import { IProduct } from "../../model/IProduct";
@@ -22,17 +22,17 @@ export default function ProductDetails() {
             .finally(() => setLoading({ loading: false }));
     }, [id]);
     if (loading.loading) {
-        return <MediaSkeleton loading ={true} />;
+        return <MediaSkeleton loading={true} />;
     }
 
     if (!product) return <Typography variant="h3" color="primary">Product Not Found</Typography>;
 
     return (
         <Grid container spacing={2} marginTop={2} justifyContent={"center"} size={{ xs: 12, sm: 10, md: 8 }}>
-            <Grid size={{lg:4 ,md:3, sm: 2, xs: 6}} textAlign={"center"}>
-                <img src={`${API_IMAGES_URL}/${product.imageUrl}`} alt={product.name} style={{ width: '75%', height: 'auto'}} />
+            <Grid size={{ lg: 4, md: 3, sm: 2, xs: 6 }} textAlign={"center"}>
+                <img src={`${API_IMAGES_URL}/${product.imageUrl}`} alt={product.name} style={{ width: '75%', height: 'auto' }} />
             </Grid >
-            <Grid  size={{lg:8 ,md:9, sm: 10, xs: 12}} textAlign={"left"}>
+            <Grid size={{ lg: 8, md: 9, sm: 10, xs: 12 }} textAlign={"left"}>
                 <Typography variant="h4" color="secondary">${(product.price / 100).toFixed(2)}</Typography>
                 <Divider sx={{ mb: 2 }} />
                 <TableContainer>
@@ -48,7 +48,7 @@ export default function ProductDetails() {
                             </TableRow>
                             <TableRow>
                                 <TableCell variant="head">Stock</TableCell>
-                                <TableCell>{product.stock}</TableCell>    
+                                <TableCell>{product.stock}</TableCell>
                             </TableRow>
                         </TableBody >
                     </Table>
