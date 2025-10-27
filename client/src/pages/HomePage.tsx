@@ -1,13 +1,16 @@
-import { Typography } from "@mui/material";
 
+import { Box } from "@mui/material";
+import HeroSection from "../components/HeroSection";
+import AboutCraftSection from "../components/AboutCraftSection";
 
 export default function HomePage() {
 
 
 
     return (
-        <Typography variant="h3" color="primary">
-           <h6>HomePage</h6>
-        </Typography>
+        <Box sx={{m: 0, p: 0 }}>
+            <HeroSection />
+            <AboutCraftSection />
+        </Box>
     )
 }

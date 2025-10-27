@@ -8,13 +8,8 @@ import { NavLink } from 'react-router-dom';
 import { useTheme } from '@mui/material/styles';
 import { useUser } from '../hooks/useUser';
 import { useAuth } from '../context/AuthContext';
+import useScrollTrigger from "@mui/material/useScrollTrigger";
 
-interface DrawerLink {
-  title: string;
-  path?: string;
-  icon?: JSX.Element;
-  action?: () => void;
-}
 
 interface User {
   name?: string;
@@ -43,6 +38,14 @@ const formatName = (value: string | undefined): string => {
 };
 
 export default function Header() {
+  const trigger = useScrollTrigger({ disableHysteresis: true, threshold: 0 });
+
+  interface DrawerLink {
+    title: string;
+    path?: string;
+    icon?: JSX.Element;
+    action?: () => void;
+  }
   const { token, logout } = useAuth();
   const { user } = useUser(token);
 
@@ -98,14 +101,12 @@ export default function Header() {
   return (
     <>
       <AppBar
-        position="static"
+        position="fixed"
         sx={{
-          mb: 4,
+          mb: 0,
           backgroundColor: "#fff",
-          boxShadow: 3,
-          width: "100%",
-          boxSizing: "border-box",
-          overflowX: "hidden"
+          boxShadow: trigger ? 3 : 0,
+          transition: "box-shadow 0.3s ease",
         }}
       >
         <Toolbar
@@ -119,7 +120,7 @@ export default function Header() {
           }}
         >
           {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }} component={NavLink} to="/">
+          <Box sx={{ display: 'flex', alignItems: 'center' }} component={NavLink} to="/home">
             <Avatar src="./logo.svg" alt="DOA" sx={{ width: 56, height: 56, bgcolor: '#d8c3c3', boxShadow: 2 }} />
           </Box>
 
@@ -134,7 +135,7 @@ export default function Header() {
                 justifyContent: { xs: "center", sm: "flex-start" }
               }}
             >
-              {['Home', 'About', 'Contact', 'Catalog'].map((title, idx) => (
+              {['Home', `About Doa's Cezve`, 'Blog', 'Shop'].map((title, idx) => (
                 <Button
                   key={idx}
                   component={NavLink}

@@ -3,6 +3,7 @@ using System;
 using Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Infrastructure.Migrations
 {
     [DbContext(typeof(DataContext))]
-    partial class DataContextModelSnapshot : ModelSnapshot
+    [Migration("20251024133730_UpdateNewProduct")]
+    partial class UpdateNewProduct
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.0");
@@ -102,16 +105,6 @@ namespace Infrastructure.Migrations
                             Description = "Each piece in this handcrafted copper coffee pot set is forged by skilled artisans, carrying forward the timeless ritual of Turkish coffee with modern elegance. Made from pure copper with a tin lined interior and solid brass handle, this set ensures even heat distribution and long - lasting quality. Perfect for those who value craftsmanship and authenticity in every brew.",
                             ImageUrl = "mix_set.jpeg",
                             IsActive = true,
-                            Name = "Handcrafted Copper Coffee Pot Set (3 pcs) Tradition Meets Elegance",
-                            Price = 200.00m,
-                            Stock = 80
-                        },
-                        new
-                        {
-                            Id = 7,
-                            Description = "Each piece in this handcrafted copper coffee pot set is forged by skilled artisans, carrying forward the timeless ritual of Turkish coffee with modern elegance. Made from pure copper with a tin lined interior and solid brass handle, this set ensures even heat distribution and long - lasting quality. Perfect for those who value craftsmanship and authenticity in every brew.",
-                            ImageUrl = "blendd.png",
-                            IsActive = false,
                             Name = "Handcrafted Copper Coffee Pot Set (3 pcs) Tradition Meets Elegance",
                             Price = 200.00m,
                             Stock = 80
