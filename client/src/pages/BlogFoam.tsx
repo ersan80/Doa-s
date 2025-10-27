@@ -16,7 +16,7 @@ import { IProduct } from "../model/IProduct";
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_IMAGES_URL = import.meta.env.VITE_API_IMAGES_URL;
 
-const BlogPost: React.FC = () => {
+const BlogFoam: React.FC = () => {
     const [products, setProducts] = useState<IProduct[]>([]);
 
     useEffect(() => {
@@ -26,6 +26,21 @@ const BlogPost: React.FC = () => {
             .catch((e) => console.error("Product fetch error:", e));
     }, []);
 
+    // Kahve görseli için uygun ürünü seç
+    const coffeeProduct = useMemo(
+        () =>
+            products.find(
+                (p) =>
+                    p.name?.toLowerCase().includes("blend") ||
+                    p.name?.toLowerCase().includes("coffee")
+            ),
+        [products]
+    );
+
+    const heroSrc =
+        coffeeProduct?.imageUrl
+            ? `${API_IMAGES_URL}/${coffeeProduct.imageUrl}`
+            : "/images/blendx.png";
 
     return (
         <Box sx={{ backgroundColor: "#fff" }}>
@@ -33,23 +48,15 @@ const BlogPost: React.FC = () => {
             <Box sx={{ position: "relative", height: { xs: "45vh", md: "60vh" }, overflow: "hidden" }}>
                 <CardMedia
                     component="img"
-                    image={
-                        products[6]
-                            ? `${API_IMAGES_URL}/${products[6]?.imageUrl}`
-                            : "/images/blendx.png"
-                    }
+                    image={"/images/blendx.png"}
                     alt="Turkish Coffee"
                     sx={{
                         width: "100%",
                         height: "100%",
                         objectFit: "cover",
-                        objectPosition: "center 70%",
                         filter: "brightness(0.6)",
-                        borderRadius: 0,
-                        display: "block"
                     }}
                 />
-
                 <Box
                     sx={{
                         position: "absolute",
@@ -122,7 +129,7 @@ const BlogPost: React.FC = () => {
                     </Grid>
 
                     {/* Key Ingredients */}
-                    <Grid sx={{xs:12} }>
+                    <Grid sx={{ xs: 12 }}>
                         <Typography variant="h5" sx={{ fontWeight: 700, color: "#b87333", mb: 1 }}>
                             The Key Ingredients for Perfect Foam
                         </Typography>
@@ -260,5 +267,5 @@ const BlogPost: React.FC = () => {
     );
 };
 
-export default BlogPost;
+export default BlogFoam;
 
