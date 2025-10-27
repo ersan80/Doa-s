@@ -109,81 +109,102 @@ export default function Header() {
         }}
       >
         <Toolbar
-          disableGutters
           sx={{
             justifyContent: "space-between",
             alignItems: "center",
-            px: { xs: 1, sm: 2 }, // kenar boşluklarını azalttık
-            minHeight: "60px !important",
-            width: "100%",
-            maxWidth: "100vw",
-            overflow: "hidden",
+            px: { xs: 1.5, md: 4 },
+            minHeight: "64px !important",
           }}
         >
-          {/* SOL: Logo */}
-          <Box
-            component={NavLink}
-            to="/home"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
+          {/* SOL: Logo + Menü */}
+          <Stack direction="row" alignItems="center" spacing={2}>
             <Box
-              component="img"
-              src="./logo.png"
-              alt="DOA'S CEZVE"
+              component={NavLink}
+              to="/home"
               sx={{
-                height: { xs: 38, sm: 44 },
-                width: "auto",
-                objectFit: "contain",
-                ml: { xs: 0, sm: 1 }, // sola yaklaştır
-                transition: "transform 0.25s ease",
-                "&:hover": { transform: "scale(1.04)" },
+                display: "flex",
+                alignItems: "center",
+                height: "100%",
               }}
-            />
-          </Box>
+            >
+              <Box
+                component="img"
+                src="./logo.png"
+                alt="DOA'S CEZVE"
+                sx={{
+                  height: { xs: 34, sm: 40 }, // mobilde küçülttük
+                  width: "auto",
+                  objectFit: "contain",
+                  transition: "transform 0.25s ease",
+                  "&:hover": { transform: "scale(1.04)" },
+                }}
+              />
+            </Box>
 
-          {/* SAĞ: Sepet + Avatar / Menü */}
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={0.5}
-            sx={{
-              pr: { xs: 0.5, sm: 1 }, // sağ boşluğu azalttık
-            }}
-          >
+            {/* Masaüstü Menü */}
+            {!isMobile && (
+              <Stack direction="row" spacing={2}>
+                {["Home", "About Doa's Cezve", "Blog", "Shop"].map((title, idx) => (
+                  <Button
+                    key={idx}
+                    component={NavLink}
+                    to={`/${title.toLowerCase().replaceAll(" ", "")}`}
+                    sx={{
+                      color: "#000",
+                      textTransform: "none",
+                      fontWeight: 300,
+                      fontSize: "1rem",
+                      "&.active": {
+                        color: brandBrown,
+                        fontWeight: 500,
+                        borderBottom: `2px solid ${brandBrown}`,
+                      },
+                      "&:hover": { color: brandBrown },
+                    }}
+                  >
+                    {title}
+                  </Button>
+                ))}
+              </Stack>
+            )}
+          </Stack>
+
+          {/* SAĞ: Sepet + Avatar + Menü */}
+          <Stack direction="row" alignItems="center" spacing={1}>
             <IconButton size="large">
               <Badge
                 badgeContent={2}
                 sx={{
-                  "& .MuiBadge-badge": { backgroundColor: "#b87333" },
+                  "& .MuiBadge-badge": { backgroundColor: brandBrown },
                 }}
               >
-                <ShoppingCart sx={{ color: "#000", fontSize: 22 }} />
+                <ShoppingCart sx={{ color: "#000" }} />
               </Badge>
             </IconButton>
 
-            {isMobile ? (
-              <IconButton onClick={() => setDrawerOpen(true)} sx={{ p: 0.5 }}>
-                <MenuIcon sx={{ color: "#000", fontSize: 26 }} />
-              </IconButton>
-            ) : (
+            {/* Avatar (sadece masaüstüde göster) */}
+            {!isMobile && (
               <Avatar
                 src="./profile.jpg"
                 alt={email}
                 sx={{
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   cursor: "pointer",
                   "&:hover": { boxShadow: 2 },
                 }}
                 onClick={handleAvatarClick}
               />
             )}
+
+            {/* Hamburger Menü (mobil) */}
+            {isMobile && (
+              <IconButton onClick={() => setDrawerOpen(true)}>
+                <MenuIcon sx={{ color: "#000" }} />
+              </IconButton>
+            )}
           </Stack>
         </Toolbar>
-
       </AppBar>
 
       {/* Avatar Popover */}
