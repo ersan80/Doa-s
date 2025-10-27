@@ -1,7 +1,7 @@
 import { createBrowserRouter } from "react-router";
 import HomePage from "../pages/HomePage";
 import AboutPage from "../pages/AboutPage";
-import ContactPage from "../pages/ContactPage";
+import ContactPage from "../pages/BlogPage";
 import App from "../components/App";
 import CatalogPage from "../pages/catalog/CatalogPage";
 import ProductDetails from "../pages/catalog/ProductDetails";
@@ -11,6 +11,7 @@ import ConfirmEmailPage from "../pages/ConfirmEmailPage";
 import DashboardPage from "../pages/DashboardPage";
 import ProtectedRoute from "../components/ProtectedRoute";
 import AllOrderPage from "../pages/AllOrdersPage";
+import BlogPage from "../pages/BlogPage";
 
 
 export const router = createBrowserRouter([
@@ -20,8 +21,8 @@ export const router = createBrowserRouter([
         element: <App />,
         children: [
             { path: "home", element: <HomePage /> },
-            { path: "/about", element: <AboutPage /> },
-            { path: "/contact", element: <ContactPage /> },
+            { path: `/about Doa's Cezve`, element: <AboutPage /> },
+            { path: "/blog", element: <BlogPage /> },
             { path: "/shop", element: <CatalogPage /> },
             { path: "/catalog/:id", element: <ProductDetails /> },
             { path: "/login", element: <LoginPage /> },

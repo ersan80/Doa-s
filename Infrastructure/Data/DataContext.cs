@@ -74,6 +74,17 @@ new Product
                     IsActive = true,
                     ImageUrl = "mix_set.jpeg",
                     Stock = 80
+                },
+
+                new Product
+                {
+                    Id = 7,
+                    Name = "Handcrafted Copper Coffee Pot Set (3 pcs) Tradition Meets Elegance",
+                    Description = "Each piece in this handcrafted copper coffee pot set is forged by skilled artisans, carrying forward the timeless ritual of Turkish coffee with modern elegance. Made from pure copper with a tin lined interior and solid brass handle, this set ensures even heat distribution and long - lasting quality. Perfect for those who value craftsmanship and authenticity in every brew.",
+                    Price = 200.00m,
+                    IsActive = false,
+                    ImageUrl = "blendd.png",
+                    Stock = 80
                 }
             );
         }

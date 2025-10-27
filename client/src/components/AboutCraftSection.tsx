@@ -16,7 +16,6 @@ const AboutCraftSection: React.FC = () => {
             .then((data) => setProducts(data))
             .catch((err) => console.error("Product fetch error:", err));
     }, []);
-    console.log(products[0]);
     return (
         <Box
             sx={{

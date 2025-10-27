@@ -120,7 +120,7 @@ export default function Header() {
           }}
         >
           {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }} component={NavLink} to="/">
+          <Box sx={{ display: 'flex', alignItems: 'center' }} component={NavLink} to="/home">
             <Avatar src="./logo.svg" alt="DOA" sx={{ width: 56, height: 56, bgcolor: '#d8c3c3', boxShadow: 2 }} />
           </Box>
 
@@ -135,7 +135,7 @@ export default function Header() {
                 justifyContent: { xs: "center", sm: "flex-start" }
               }}
             >
-              {['Home', 'About', 'Contact', 'Shop'].map((title, idx) => (
+              {['Home', `About Doa's Cezve`, 'Blog', 'Shop'].map((title, idx) => (
                 <Button
                   key={idx}
                   component={NavLink}
