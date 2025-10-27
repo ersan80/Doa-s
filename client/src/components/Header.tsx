@@ -1,15 +1,43 @@
-import { useState } from 'react';
-import { ShoppingCart, Menu as MenuIcon, Logout, Dashboard, Help, Info, ListAlt } from '@mui/icons-material';
+import { useState } from "react";
 import {
-  AppBar, Badge, Box, Button, Drawer, IconButton, List, ListItem, ListItemIcon, ListItemText,
-  Stack, Toolbar, useMediaQuery, Avatar, Divider, Popover, Typography
-} from '@mui/material';
-import { NavLink } from 'react-router-dom';
-import { useTheme } from '@mui/material/styles';
-import { useUser } from '../hooks/useUser';
-import { useAuth } from '../context/AuthContext';
+  ShoppingCart,
+  Menu as MenuIcon,
+  Logout,
+  Dashboard,
+  Help,
+  Info,
+  ListAlt,
+} from "@mui/icons-material";
+import {
+  AppBar,
+  Badge,
+  Box,
+  Button,
+  Drawer,
+  IconButton,
+  List,
+  ListItem,
+  ListItemIcon,
+  ListItemText,
+  Stack,
+  Toolbar,
+  useMediaQuery,
+  Avatar,
+  Divider,
+  Popover,
+  Typography,
+} from "@mui/material";
+import { NavLink } from "react-router-dom";
+import { useTheme } from "@mui/material/styles";
+import { useUser } from "../hooks/useUser";
+import { useAuth } from "../context/AuthContext";
 import useScrollTrigger from "@mui/material/useScrollTrigger";
 
+// ✅ Modern fontlar
+import "@fontsource/poppins/400.css";
+import "@fontsource/poppins/500.css";
+import "@fontsource/poppins/600.css";
+import "@fontsource/poppins/700.css";
 
 interface User {
   name?: string;
@@ -17,28 +45,36 @@ interface User {
   email?: string;
 }
 
-// Geliştirilmiş isim formatlama fonksiyonu
+// İsim formatlama
 const formatName = (value: string | undefined): string => {
   if (!value) return "";
-
-  // @ işaretinden sonrasını kaldır
   let clean = value.split("@")[0];
-
-  // Nokta, alt çizgi, tire gibi ayırıcıları boşluk yap
   clean = clean.replace(/[._-]/g, " ");
-
-  // Fazla boşlukları temizle
   clean = clean.trim().replace(/\s+/g, " ");
-
-  // Her kelimenin baş harfini büyük yap
   return clean
     .split(" ")
-    .map(word => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1).toLowerCase())
     .join(" ");
 };
 
 export default function Header() {
   const trigger = useScrollTrigger({ disableHysteresis: true, threshold: 0 });
+  const { token, logout } = useAuth();
+  const { user } = useUser(token);
+  const name = user?.name ?? "";
+  const email = user?.email ?? "";
+  const displayName = name || email;
+
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const brandBrown = "#b87333";
+
+  const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
+    setAnchorEl(event.currentTarget);
+  };
+  const handleClose = () => setAnchorEl(null);
 
   interface DrawerLink {
     title: string;
@@ -46,36 +82,26 @@ export default function Header() {
     icon?: JSX.Element;
     action?: () => void;
   }
-  const { token, logout } = useAuth();
-  const { user } = useUser(token);
 
-  // Varsayılan değerler
-  const name = user?.name ?? "";
-  const email = user?.email ?? "";
-  const displayName = name || email; // name yoksa email kullan
-
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
-  const brandBrown = '#7d6c6c';
-
-  const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-
-  const handleClose = () => setAnchorEl(null);
-
-  const drawerLinks: DrawerLink[] = token ? [
-    { title: 'All Orders', path: '/orders', icon: <ListAlt /> },
-    { title: 'User Info', path: '/profile', icon: <Info /> },
-    { title: 'Help', path: '/help', icon: <Help /> },
-    { title: 'Dashboard', path: '/dashboard', icon: <Dashboard /> },
-    { title: 'Logout', icon: <Logout />, action: () => { logout(); window.location.href = '/login'; } },
-  ] : [
-    { title: 'Login', path: '/login', icon: <Info /> },
-    { title: 'Sign Up', path: '/register', icon: <ListAlt /> },
-  ];
+  const drawerLinks: DrawerLink[] = token
+    ? [
+      { title: "All Orders", path: "/orders", icon: <ListAlt /> },
+      { title: "User Info", path: "/profile", icon: <Info /> },
+      { title: "Help", path: "/help", icon: <Help /> },
+      { title: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+      {
+        title: "Logout",
+        icon: <Logout />,
+        action: () => {
+          logout();
+          window.location.href = "/login";
+        },
+      },
+    ]
+    : [
+      { title: "Login", path: "/login", icon: <Info /> },
+      { title: "Sign Up", path: "/register", icon: <ListAlt /> },
+    ];
 
   const renderDrawerItem = (item: DrawerLink, idx: number) => (
     <ListItem
@@ -85,12 +111,15 @@ export default function Header() {
         handleClose();
         setDrawerOpen(false);
       }}
-      component={item.path ? NavLink : 'div'}
-      to={item.path || ''}
+      component={item.path ? NavLink : "div"}
+      to={item.path || ""}
       sx={{
-        '&:hover': { backgroundColor: '#f0f0f0' },
-        '& .MuiListItemIcon-root': { color: brandBrown },
-        '& .MuiListItemText-primary': { fontWeight: 500 }
+        "&:hover": { backgroundColor: "#f9f9f9" },
+        "& .MuiListItemIcon-root": { color: brandBrown },
+        "& .MuiListItemText-primary": {
+          fontWeight: 500,
+          fontFamily: "Poppins, sans-serif",
+        },
       }}
     >
       {item.icon && <ListItemIcon>{item.icon}</ListItemIcon>}
@@ -103,51 +132,94 @@ export default function Header() {
       <AppBar
         position="fixed"
         sx={{
-          mb: 0,
           backgroundColor: "#fff",
           boxShadow: trigger ? 3 : 0,
           transition: "box-shadow 0.3s ease",
+          fontFamily: "Poppins, sans-serif",
         }}
       >
         <Toolbar
           sx={{
-            px: 1,
+            px: { xs: 1, sm: 3 },
             justifyContent: "space-between",
+            alignItems: "center",
+            height: 72,
             width: "100%",
-            maxWidth: "100%",
             boxSizing: "border-box",
-            overflowX: "hidden"
           }}
         >
-          {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center' }} component={NavLink} to="/home">
-            <Avatar src="./logo.svg" alt="DOA" sx={{ width: 56, height: 56, bgcolor: '#d8c3c3', boxShadow: 2 }} />
+          {/* ✅ Logo hizalaması düzeltildi */}
+          <Box
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              height: 56,
+            }}
+            component={NavLink}
+            to="/home"
+          >
+            <Avatar
+              src="./logo.png"
+              alt="DOA"
+              sx={{
+                width: 64,
+                height: 64,
+                bgcolor: "#fff",
+                border: "1px solid #ddd",
+                boxShadow: 1,
+                objectFit: "contain",
+                padding: "4px",
+                transition: "transform 0.3s ease, box-shadow 0.3s ease",
+                "&:hover": { transform: "scale(1.07)", boxShadow: 2 },
+              }}
+            />
           </Box>
 
-          {/* Menü butonları (masaüstü) */}
+          {/* Menü */}
           {!isMobile && (
             <Stack
               direction="row"
-              spacing={3}
+              spacing={3.5}
               sx={{
-                ml: { xs: 0, sm: 2 },
+                ml: 3,
                 flexGrow: 1,
-                justifyContent: { xs: "center", sm: "flex-start" }
+                justifyContent: "flex-start",
+                "& a": {
+                  textTransform: "none",
+                  fontWeight: 500,
+                  fontSize: "1.05rem",
+                  letterSpacing: "0.4px",
+                  color: "#222",
+                  fontFamily: "Poppins, sans-serif",
+                  position: "relative",
+                  "&:hover": {
+                    color: brandBrown,
+                  },
+                  "&::after": {
+                    content: '""',
+                    position: "absolute",
+                    bottom: -4,
+                    left: 0,
+                    width: "0%",
+                    height: "2px",
+                    backgroundColor: brandBrown,
+                    transition: "width 0.3s ease",
+                  },
+                  "&:hover::after": { width: "100%" },
+                  "&.active": {
+                    color: brandBrown,
+                    fontWeight: 600,
+                    "&::after": { width: "100%" },
+                  },
+                },
               }}
             >
-              {['Home', `About Doa's Cezve`, 'Blog', 'Shop'].map((title, idx) => (
+              {["Home", "About Doa's Cezve", "Blog", "Shop"].map((title, idx) => (
                 <Button
                   key={idx}
                   component={NavLink}
-                  to={`/${title.toLowerCase()}`}
-                  sx={{
-                    color: '#000',
-                    textTransform: 'none',
-                    fontWeight: 500,
-                    fontSize: '1rem',
-                    '&.active': { color: brandBrown, fontWeight: 700 },
-                    '&:hover': { color: brandBrown },
-                  }}
+                  to={`/${title.toLowerCase().replace(/\s+/g, "")}`}
                 >
                   {title}
                 </Button>
@@ -155,10 +227,13 @@ export default function Header() {
             </Stack>
           )}
 
-          {/* Sağ taraf: Sepet + Avatar/Menu */}
+          {/* Sağ taraf */}
           <Stack direction="row" spacing={1} alignItems="center">
-            <IconButton size='large'>
-              <Badge badgeContent={2} sx={{ "& .MuiBadge-badge": { backgroundColor: brandBrown } }}>
+            <IconButton size="large">
+              <Badge
+                badgeContent={2}
+                sx={{ "& .MuiBadge-badge": { backgroundColor: brandBrown } }}
+              >
                 <ShoppingCart sx={{ color: "#000" }} />
               </Badge>
             </IconButton>
@@ -172,19 +247,32 @@ export default function Header() {
                 <Avatar
                   src="./profile.jpg"
                   alt={email}
-                  sx={{ width: 40, height: 40, cursor: 'pointer', '&:hover': { boxShadow: 2 } }}
+                  sx={{
+                    width: 40,
+                    height: 40,
+                    cursor: "pointer",
+                    "&:hover": { boxShadow: 2 },
+                  }}
                   onClick={handleAvatarClick}
                 />
                 <Popover
                   open={Boolean(anchorEl)}
                   anchorEl={anchorEl}
                   onClose={handleClose}
-                  anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-                  transformOrigin={{ vertical: 'top', horizontal: 'right' }}
+                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+                  transformOrigin={{ vertical: "top", horizontal: "right" }}
                 >
                   <Box sx={{ p: 2, minWidth: 220 }}>
                     {token && (
-                      <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, textAlign: 'center' }}>
+                      <Typography
+                        variant="subtitle1"
+                        sx={{
+                          fontWeight: 600,
+                          mb: 1,
+                          textAlign: "center",
+                          fontFamily: "Poppins, sans-serif",
+                        }}
+                      >
                         Welcome, {formatName(displayName)}
                       </Typography>
                     )}
@@ -203,13 +291,14 @@ export default function Header() {
         anchor="right"
         open={drawerOpen}
         onClose={() => setDrawerOpen(false)}
-        ModalProps={{
-          keepMounted: true,
-          disableScrollLock: false
-        }}
+        ModalProps={{ keepMounted: true }}
       >
-        <Box sx={{ width: { xs: '80vw', sm: 260 }, p: 2 }}>
-          <Avatar src="./logo.svg" alt="DOA'S CEZVE" sx={{ width: 72, height: 72, m: "0 auto", mb: 2 }} />
+        <Box sx={{ width: { xs: "80vw", sm: 260 }, p: 2 }}>
+          <Avatar
+            src="./logo.png"
+            alt="DOA'S CEZVE"
+            sx={{ width: 72, height: 72, m: "0 auto", mb: 2 }}
+          />
           <Divider />
           <List>{drawerLinks.map(renderDrawerItem)}</List>
         </Box>
