@@ -5,7 +5,7 @@ import CssBaseline from "@mui/material/CssBaseline";
 import { Container, Toolbar } from "@mui/material";
 import { Outlet, useLocation } from "react-router-dom";
 import Footer from "./Footer";
-
+import DiscountPopup from "../pages/DiscountPopup";
 function App() {
   const location = useLocation();
   const isHome = location.pathname === "/" || location.pathname === "/home";
@@ -14,6 +14,7 @@ function App() {
     <AuthProvider>
       <CssBaseline />
       <Header />
+      <DiscountPopup />
       <Toolbar /> {/* Header yüksekliği kadar boşluk ekler */}
       {isHome ? (
         <Outlet />

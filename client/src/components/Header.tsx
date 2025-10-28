@@ -32,8 +32,11 @@ import { useTheme } from "@mui/material/styles";
 import { useUser } from "../hooks/useUser";
 import { useAuth } from "../context/AuthContext";
 import useScrollTrigger from "@mui/material/useScrollTrigger";
-import "@fontsource/poppins/300.css";
-import "@fontsource/poppins/400.css";
+
+// modern fontlar
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
 
 const brandBrown = "#b87333";
 
@@ -52,6 +55,11 @@ export default function Header() {
     setAnchorEl(event.currentTarget);
   };
   const handleClose = () => setAnchorEl(null);
+
+  // @ sonrasını kaldır, nokta ve alt çizgiyi boşluk yap
+  const displayName = email
+    ? email.split("@")[0].replace(/[._-]/g, " ").trim().replace(/\s+/g, " ")
+    : "Guest";
 
   const drawerLinks = token
     ? [
@@ -102,10 +110,11 @@ export default function Header() {
           backgroundColor: "#fff",
           boxShadow: trigger ? 2 : 0,
           transition: "box-shadow 0.3s ease",
-          fontFamily: "Poppins, sans-serif",
-          height: 64, // sabit yükseklik
+          fontFamily: "Inter, sans-serif",
+          height: 64,
           display: "flex",
           justifyContent: "center",
+          overflowX: "hidden", // 🔧 mobil taşmayı engeller
         }}
       >
         <Toolbar
@@ -114,10 +123,17 @@ export default function Header() {
             alignItems: "center",
             px: { xs: 1.5, md: 4 },
             minHeight: "64px !important",
+            width: "100%",
+            maxWidth: "100vw", // 🔧 ekstra taşmaları önler
           }}
         >
           {/* SOL: Logo + Menü */}
-          <Stack direction="row" alignItems="center" spacing={2}>
+          <Stack
+            direction="row"
+            alignItems="center"
+            spacing={{ xs: 1, md: 2 }}
+            sx={{ flexShrink: 1, minWidth: 0 }}
+          >
             <Box
               component={NavLink}
               to="/home"
@@ -125,6 +141,7 @@ export default function Header() {
                 display: "flex",
                 alignItems: "center",
                 height: "100%",
+                flexShrink: 0,
               }}
             >
               <Box
@@ -132,39 +149,41 @@ export default function Header() {
                 src="./logo.png"
                 alt="DOA'S CEZVE"
                 sx={{
-                  height: { xs: 34, sm: 40 }, // mobilde küçülttük
+                  height: { xs: 38, sm: 42 },
                   width: "auto",
                   objectFit: "contain",
                   transition: "transform 0.25s ease",
-                  "&:hover": { transform: "scale(1.04)" },
+                  "&:hover": { transform: "scale(1.05)" },
                 }}
               />
             </Box>
 
             {/* Masaüstü Menü */}
             {!isMobile && (
-              <Stack direction="row" spacing={2}>
-                {["Home", "About Doa's Cezve", "Blog", "Shop"].map((title, idx) => (
-                  <Button
-                    key={idx}
-                    component={NavLink}
-                    to={`/${title.toLowerCase().replaceAll(" ", "")}`}
-                    sx={{
-                      color: "#000",
-                      textTransform: "none",
-                      fontWeight: 300,
-                      fontSize: "1rem",
-                      "&.active": {
-                        color: brandBrown,
-                        fontWeight: 500,
-                        borderBottom: `2px solid ${brandBrown}`,
-                      },
-                      "&:hover": { color: brandBrown },
-                    }}
-                  >
-                    {title}
-                  </Button>
-                ))}
+              <Stack direction="row" spacing={2} sx={{ ml: 1 }}>
+                {["Home", "About Doa's Cezve", "Blog", "Shop"].map(
+                  (title, idx) => (
+                    <Button
+                      key={idx}
+                      component={NavLink}
+                      to={`/${title.toLowerCase().replace(" ", "")}`}
+                      sx={{
+                        color: "#000",
+                        textTransform: "none",
+                        fontWeight: 400,
+                        fontSize: "1rem",
+                        "&.active": {
+                          color: brandBrown,
+                          fontWeight: 600,
+                          borderBottom: `2px solid ${brandBrown}`,
+                        },
+                        "&:hover": { color: brandBrown },
+                      }}
+                    >
+                      {title}
+                    </Button>
+                  )
+                )}
               </Stack>
             )}
           </Stack>
@@ -182,11 +201,10 @@ export default function Header() {
               </Badge>
             </IconButton>
 
-            {/* Avatar (sadece masaüstüde göster) */}
+            {/* Avatar masaüstü */}
             {!isMobile && (
               <Avatar
-                src="./profile.jpg"
-                alt={email}
+                alt={displayName}
                 sx={{
                   width: 38,
                   height: 38,
@@ -194,10 +212,12 @@ export default function Header() {
                   "&:hover": { boxShadow: 2 },
                 }}
                 onClick={handleAvatarClick}
-              />
+              >
+                {displayName.charAt(0).toUpperCase()}
+              </Avatar>
             )}
 
-            {/* Hamburger Menü (mobil) */}
+            {/* Hamburger Menü mobil */}
             {isMobile && (
               <IconButton onClick={() => setDrawerOpen(true)}>
                 <MenuIcon sx={{ color: "#000" }} />
@@ -216,8 +236,16 @@ export default function Header() {
         transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <Box sx={{ p: 2, minWidth: 220 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, textAlign: "center" }}>
-            Welcome, {user?.name ?? email}
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontWeight: 600,
+              mb: 1,
+              textAlign: "center",
+              fontFamily: "Inter, sans-serif",
+            }}
+          >
+            Welcome, {displayName}
           </Typography>
           <Divider sx={{ mb: 1 }} />
           <List>{drawerLinks.map(renderDrawerItem)}</List>
@@ -233,7 +261,11 @@ export default function Header() {
       >
         <Box sx={{ width: 260, p: 2 }}>
           <Box sx={{ textAlign: "center", mb: 2 }}>
-            <img src="./logo.png" alt="DOA'S CEZVE" style={{ width: 90 }} />
+            <img
+              src="./logo.png"
+              alt="DOA'S CEZVE"
+              style={{ width: 100, height: "auto", objectFit: "contain" }}
+            />
           </Box>
           <Divider sx={{ mb: 2 }} />
           <List>
@@ -241,7 +273,7 @@ export default function Header() {
               <ListItem
                 key={idx}
                 component={NavLink}
-                to={`/${title.toLowerCase().replaceAll(" ", "")}`}
+                to={`/${title.toLowerCase().replace(" ", "")}`}
                 onClick={() => setDrawerOpen(false)}
                 sx={{
                   "& .MuiListItemText-primary": { fontWeight: 500 },

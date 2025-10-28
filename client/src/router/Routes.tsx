@@ -14,7 +14,8 @@ import AllOrderPage from "../pages/AllOrdersPage";
 import BlogPage from "../pages/BlogList";
 import BlogFoam from "../pages/BlogFoam";
 import BlogCopper from "../pages/BlogCopper";
-
+import ExploreCezves from "../pages/ExploreCezves";
+import DiscoverCoffee from "../pages/DiscoverCoffee";
 export const router = createBrowserRouter([
 
     {
@@ -22,7 +23,7 @@ export const router = createBrowserRouter([
         element: <App />,
         children: [
             { path: "home", element: <HomePage /> },
-            { path: "/aboutDoa'sCezve", element: <AboutPage /> },
+            { path: "/aboutdoa's cezve", element: <AboutPage /> },
             { path: "/blog", element: <BlogPage /> },
             { path: "/shop", element: <CatalogPage /> },
             { path: "/catalog/:id", element: <ProductDetails /> },
@@ -30,7 +31,9 @@ export const router = createBrowserRouter([
             { path: "/register", element: <RegisterPage /> },
             { path: "/confirm-email", element: <ConfirmEmailPage /> },
             { path: "/blog/foam", element: <BlogFoam /> },  
-            {path: "/blog/copper", element: <BlogCopper /> },
+            { path: "/blog/copper", element: <BlogCopper /> },
+            { path: "/explore-cezves", element: <ExploreCezves /> },
+            {path: "discover-coffee", element: <DiscoverCoffee />},
             {
                 path: "/dashboard",
                 element: (

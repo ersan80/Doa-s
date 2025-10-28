@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Box, Typography, Button } from "@mui/material";
 import { motion, AnimatePresence } from "framer-motion";
-
+import { NavLink } from "react-router-dom";
 const videos = [
     "/videos/handcrafted.mp4",
     "/videos/hammering.mp4",
@@ -105,6 +105,8 @@ const HeroSection: React.FC = () => {
                         backgroundColor: "#b87333",
                         "&:hover": { backgroundColor: "#a0622d" },
                     }}
+                    component={NavLink}
+                    to="/shop"
                 >
                     Shop Now
                 </Button>
