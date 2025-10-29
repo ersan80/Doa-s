@@ -32,12 +32,16 @@ import { useTheme } from "@mui/material/styles";
 import { useUser } from "../hooks/useUser";
 import { useAuth } from "../context/AuthContext";
 import useScrollTrigger from "@mui/material/useScrollTrigger";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
 // modern fontlar
 import "@fontsource/inter/400.css";
 import "@fontsource/inter/500.css";
 import "@fontsource/inter/600.css";
-
+import "@fontsource/inter-tight/500.css"
+import "@fontsource/poppins/500.css"
+import "@fontsource/outfit/500.css"
 const brandBrown = "#b87333";
 
 export default function Header() {
@@ -101,7 +105,9 @@ export default function Header() {
       <ListItemText primary={item.title} />
     </ListItem>
   );
-
+  
+  const { getTotalCount } = useCart(); // ✅ sepet sayısı için
+  const navigate = useNavigate(); // ✅ yönlendirme için
   return (
     <>
       <AppBar
@@ -190,9 +196,9 @@ export default function Header() {
 
           {/* SAĞ: Sepet + Avatar + Menü */}
           <Stack direction="row" alignItems="center" spacing={1}>
-            <IconButton size="large">
+            <IconButton size="large" component={NavLink} to="/orders">
               <Badge
-                badgeContent={2}
+                badgeContent={getTotalCount()} // ✅ dinamik sayı
                 sx={{
                   "& .MuiBadge-badge": { backgroundColor: brandBrown },
                 }}
@@ -239,10 +245,11 @@ export default function Header() {
           <Typography
             variant="subtitle1"
             sx={{
-              fontWeight: 600,
-              mb: 1,
+              fontFamily: "'Outfit', sans-serif",
+              fontWeight: 500,
+              fontSize: "1.05rem",
               textAlign: "center",
-              fontFamily: "Inter, sans-serif",
+              color: "#d05d5d",
             }}
           >
             Welcome, {displayName}
