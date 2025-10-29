@@ -77,5 +77,21 @@ public class OrderController : ControllerBase
             .FirstOrDefaultAsync(o => o.Id == id);
         if (order == null) return NotFound();
         return Ok(order);
+
+
     }
+
+    // ✅ Sipariş durumunu güncelle (admin işlemi)
+    [HttpPut("{id}/status")]
+    public async Task<IActionResult> UpdateOrderStatus(int id, [FromBody] string status)
+    {
+        var order = await _context.Orders.FindAsync(id);
+        if (order == null) return NotFound("Order not found.");
+
+        order.Status = status;
+        await _context.SaveChangesAsync();
+
+        return Ok(new { order.Id, order.Status, Message = "Order status updated." });
+    }
+
 }

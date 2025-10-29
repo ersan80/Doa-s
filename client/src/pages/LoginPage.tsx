@@ -60,7 +60,6 @@ const LoginPage = () => {
             });
             if (data.success && data.token) {
                 login({ email: data.email, token: data.token, emailConfirmed: true });
-                console.log("burdayim")
                 showSuccess("Entry Success 🎉");
                 setLoginData({ email: "", password: "" });
                 navigate("/home", { replace: true });

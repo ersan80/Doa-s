@@ -4,6 +4,7 @@ interface AuthContextType {
     token: string | null;
     email: string | null;
     emailConfirmed: boolean;
+    isAdmin?: boolean; // ✅ eklendi
     login: (data: { token: string; email: string; emailConfirmed: boolean }) => void;
     logout: () => void;
 }
@@ -32,7 +33,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setEmail(email);
         setEmailConfirmed(emailConfirmed);
     };
-
+    const adminEmail = "kifipi9327@dropeso.com";
+    
     const logout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("email");
@@ -43,11 +45,25 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         window.location.href = "/catalog"
     };
 
+
+
+
     return (
-        <AuthContext.Provider value={{ token, email, emailConfirmed, login, logout }}>
+        <AuthContext.Provider
+            value={{
+                token,
+                email,
+                emailConfirmed,
+                isAdmin: email === adminEmail, // ✅ yeni alan
+                login,
+                logout,
+            }}
+        >
             {children}
         </AuthContext.Provider>
     );
+
+
 };
 
 export const useAuth = () => useContext(AuthContext);

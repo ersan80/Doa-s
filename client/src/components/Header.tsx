@@ -46,8 +46,8 @@ const brandBrown = "#b87333";
 
 export default function Header() {
   const trigger = useScrollTrigger({ disableHysteresis: true, threshold: 0 });
-  const { token, logout } = useAuth();
-  const { user } = useUser(token);
+  const { token, logout, isAdmin } = useAuth();
+  const { user} = useUser(token);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const theme = useTheme();
@@ -70,13 +70,16 @@ export default function Header() {
       { title: "All Orders", path: "/orders", icon: <ListAlt /> },
       { title: "User Info", path: "/profile", icon: <Info /> },
       { title: "Help", path: "/help", icon: <Help /> },
-      { title: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+      ...(isAdmin
+        ? [{ title: "Dashboard", path: "/dashboard", icon: <Dashboard /> }]
+        : []),
+
       {
         title: "Logout",
         icon: <Logout />,
         action: () => {
           logout();
-          window.location.href = "/login";
+          navigate("/login", { replace: true });
         },
       },
     ]
@@ -196,7 +199,7 @@ export default function Header() {
 
           {/* SAĞ: Sepet + Avatar + Menü */}
           <Stack direction="row" alignItems="center" spacing={1}>
-            <IconButton size="large" component={NavLink} to="/orders">
+            <IconButton size="large" component={NavLink} to="/checkout">
               <Badge
                 badgeContent={getTotalCount()} // ✅ dinamik sayı
                 sx={{
@@ -255,7 +258,7 @@ export default function Header() {
             Welcome, {displayName}
           </Typography>
           <Divider sx={{ mb: 1 }} />
-          <List>{drawerLinks.map(renderDrawerItem)}</List>
+          <List>{drawerLinks.filter(Boolean).map(renderDrawerItem)}</List>
         </Box>
       </Popover>
 
@@ -292,7 +295,7 @@ export default function Header() {
             ))}
           </List>
           <Divider sx={{ mt: 2, mb: 1 }} />
-          <List>{drawerLinks.map(renderDrawerItem)}</List>
+          <List>{drawerLinks.filter(Boolean).map(renderDrawerItem)}</List>
         </Box>
       </Drawer>
     </>

@@ -7,6 +7,11 @@ namespace Infrastructure.Entity
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public decimal Total { get; set; }
         public ICollection<OrderItem> Items { get; set; } = new List<OrderItem>();
+        public string CustomerName { get; set; } = string.Empty;
+        public string Address { get; set; } = string.Empty;
+        public string Phone { get; set; } = string.Empty;
+        public string Status { get; set; } = "Pending"; // ✅ Default: Onay Bekliyor
+
     }
 
     public class OrderItem
