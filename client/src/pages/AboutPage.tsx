@@ -174,10 +174,7 @@ Because Turkish coffee deserves to be fresh and every cezve deserves a story.`}
                                 title: "We are artisans at heart.",
                                 text: "Precision, patience, and passion define every detail of what we create.",
                             },
-                            {
-                                title: "We value connection and respect.",
-                                text: "Coffee is more than a drink it’s a shared moment, a bond between people and cultures.",
-                            },
+
                             {
                                 title: "We craft sustainably, think consciously.",
                                 text: "From sourcing to packaging, we honor nature and the hands that make our coffee possible.",

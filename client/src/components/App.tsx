@@ -1,10 +1,11 @@
-
 import { AuthProvider } from "../context/AuthContext";
+import { CartProvider } from "../context/CartContext"; // ✅ ekle
 import Header from "./Header";
 import CssBaseline from "@mui/material/CssBaseline";
 import { Container, Toolbar } from "@mui/material";
 import { Outlet, useLocation } from "react-router-dom";
 import Footer from "./Footer";
+import DiscountPopup from "../pages/DiscountPopup";
 
 function App() {
   const location = useLocation();
@@ -12,17 +13,20 @@ function App() {
 
   return (
     <AuthProvider>
-      <CssBaseline />
-      <Header />
-      <Toolbar /> {/* Header yüksekliği kadar boşluk ekler */}
-      {isHome ? (
-        <Outlet />
-      ) : (
-        <Container disableGutters maxWidth={false} sx={{ mt: 0, px: 2 }}>
+      <CartProvider> {/* ✅ sepet context sarmalayıcı */}
+        <CssBaseline />
+        <Header />
+        <DiscountPopup />
+        <Toolbar />
+        {isHome ? (
           <Outlet />
+        ) : (
+          <Container disableGutters maxWidth={false} sx={{ mt: 0, px: 2 }}>
+            <Outlet />
           </Container>
-      )}
-      <Footer />
+        )}
+        <Footer />
+      </CartProvider>
     </AuthProvider>
   );
 }

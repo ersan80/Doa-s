@@ -60,10 +60,9 @@ const LoginPage = () => {
             });
             if (data.success && data.token) {
                 login({ email: data.email, token: data.token, emailConfirmed: true });
-                console.log("burdayim")
                 showSuccess("Entry Success 🎉");
                 setLoginData({ email: "", password: "" });
-                navigate("/dashboard", { replace: true });
+                navigate("/home", { replace: true });
             } else {
                 showError(data.message || "Entry failed. Please try again.");
             }

@@ -20,7 +20,6 @@ export function useUser(token: string | null) {
     async function fetchUser() {
       try {
         const data = await fetchJson<User>(`${import.meta.env.VITE_API_BASE_URL}/User`);
-        console.log(data)
         setUser(data);
       } catch (err: unknown) {
         console.error(err);

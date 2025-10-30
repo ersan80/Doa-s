@@ -1,7 +1,6 @@
 import { createBrowserRouter } from "react-router";
 import HomePage from "../pages/HomePage";
 import AboutPage from "../pages/AboutPage";
-import ContactPage from "../pages/BlogList";
 import App from "../components/App";
 import CatalogPage from "../pages/catalog/CatalogPage";
 import ProductDetails from "../pages/catalog/ProductDetails";
@@ -14,6 +13,9 @@ import AllOrderPage from "../pages/AllOrdersPage";
 import BlogPage from "../pages/BlogList";
 import BlogFoam from "../pages/BlogFoam";
 import BlogCopper from "../pages/BlogCopper";
+import ExploreCezves from "../pages/ExploreCezves";
+import DiscoverCoffee from "../pages/DiscoverCoffee";
+import UserOrdersPage from "../pages/UserOrdersPage"
 
 export const router = createBrowserRouter([
 
@@ -22,7 +24,7 @@ export const router = createBrowserRouter([
         element: <App />,
         children: [
             { path: "home", element: <HomePage /> },
-            { path: "/aboutDoa'sCezve", element: <AboutPage /> },
+            { path: "/aboutdoa's cezve", element: <AboutPage /> },
             { path: "/blog", element: <BlogPage /> },
             { path: "/shop", element: <CatalogPage /> },
             { path: "/catalog/:id", element: <ProductDetails /> },
@@ -30,7 +32,10 @@ export const router = createBrowserRouter([
             { path: "/register", element: <RegisterPage /> },
             { path: "/confirm-email", element: <ConfirmEmailPage /> },
             { path: "/blog/foam", element: <BlogFoam /> },  
-            {path: "/blog/copper", element: <BlogCopper /> },
+            { path: "/blog/copper", element: <BlogCopper /> },
+            { path: "/explore-cezves", element: <ExploreCezves /> },
+            { path: "discover-coffee", element: <DiscoverCoffee /> },
+            { path: "/orders", element: <UserOrdersPage />},
             {
                 path: "/dashboard",
                 element: (
@@ -40,7 +45,7 @@ export const router = createBrowserRouter([
             }, 
 
             {
-                path: "/orders", element: (
+                path: "/checkout", element: (
                     <ProtectedRoute requireVerifiedEmail>
                         <AllOrderPage/>
                     </ProtectedRoute>)

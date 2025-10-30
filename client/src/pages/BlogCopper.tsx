@@ -47,11 +47,11 @@ const BlogCopper: React.FC = () => {
             {/* 🧿 Blog İçeriği */}
             <Box component={motion.div} initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
                 <Typography variant="body1" sx={{ lineHeight: 1.8, mb: 3 }}>
-                    For centuries, the <strong>handcrafted copper cezve</strong> — also known as
-                    the <em>Turkish coffee pot</em> — has been at the heart of coffee rituals
+                    For centuries, the <strong>handcrafted copper cezve</strong> also known as
+                    the <em>Turkish coffee pot</em> has been at the heart of coffee rituals
                     across Anatolia and beyond. Each cezve tells a story: of heat, metal,
                     patience, and mastery. In an age of machines and mass production, these
-                    small copper pots continue to symbolize something deeply human — the art
+                    small copper pots continue to symbolize something deeply human the art
                     of making coffee with care.
                 </Typography>
 
@@ -62,7 +62,7 @@ const BlogCopper: React.FC = () => {
                     Long before the first espresso machine was built, artisans in Istanbul,
                     Gaziantep, and Trabzon were hammering pure copper sheets into elegant,
                     functional cezves. Every strike of the hammer shaped not just metal, but
-                    memory — a rhythm passed from master to apprentice.
+                    memory a rhythm passed from master to apprentice.
                 </Typography>
                 <Typography variant="body1" sx={{ lineHeight: 1.8, mb: 3 }}>
                     A handmade copper cezve isn’t just a tool. It’s a companion in the ritual of
@@ -77,7 +77,7 @@ const BlogCopper: React.FC = () => {
                 </Typography>
                 <Typography variant="body1" sx={{ lineHeight: 1.8, mb: 3 }}>
                     Copper is one of nature’s most efficient heat conductors. When you brew
-                    Turkish coffee, even heat distribution is critical — too much heat burns
+                    Turkish coffee, even heat distribution is critical too much heat burns
                     the foam, too little leaves the coffee flat.
                 </Typography>
                 <Typography variant="body1" sx={{ lineHeight: 1.8, mb: 3 }}>
@@ -104,7 +104,7 @@ const BlogCopper: React.FC = () => {
                 </ul>
                 <Typography variant="body1" sx={{ lineHeight: 1.8, mb: 3 }}>
                     No two cezves are identical, because no two hands shape them the same. That
-                    uniqueness is what makes them special —{" "}
+                    uniqueness is what makes them special {" "}
                     <strong>a symbol of authenticity and craftsmanship.</strong>
                 </Typography>
 
@@ -129,7 +129,7 @@ const BlogCopper: React.FC = () => {
                 <Typography variant="body1" sx={{ lineHeight: 1.8 }}>
                     In a world chasing speed, the handcrafted copper cezve reminds us to slow
                     down, listen to the rhythm of the boil, and savor the story behind every
-                    cup. Because true craftsmanship isn’t just seen — it’s felt.
+                    cup. Because true craftsmanship isn’t just seen it’s felt.
                 </Typography>
             </Box>
         </Container>

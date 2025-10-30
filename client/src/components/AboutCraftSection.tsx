@@ -3,6 +3,7 @@ import { Box, Typography, Button, Grid } from "@mui/material";
 import { motion } from "framer-motion";
 import { IProduct } from "../model/IProduct";
 import { useEffect, useState } from "react";
+import { NavLink } from "react-router-dom"; 
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_IMAGES_URL = import.meta.env.VITE_API_IMAGES_URL;
@@ -34,7 +35,7 @@ const AboutCraftSection: React.FC = () => {
                 <Grid size={{ xs: 12, md: 6 }} >
                     <Box
                         component={motion.img}
-                        src={`${API_IMAGES_URL}/${products[2]?.imageUrl}`}
+                        src={`${API_IMAGES_URL}/${products[5]?.imageUrl}`}
                         alt={products[3]?.name || "Handcrafted Copper Cezve"}
                         initial={{ opacity: 0, x: -50 }}
                         whileInView={{ opacity: 1, x: 0 }}
@@ -64,7 +65,7 @@ const AboutCraftSection: React.FC = () => {
                                 color: "#333",
                             }}
                         >
-                            Handcrafted Copper Cezves
+                            🏺 Handcrafted Copper Cezves
                         </Typography>
                         <Typography
                             variant="body1"
@@ -83,12 +84,14 @@ const AboutCraftSection: React.FC = () => {
 
                         <Button
                             variant="contained"
+                            component={NavLink}
+                            to="/explore-cezves"
                             sx={{
                                 backgroundColor: "#b87333",
                                 "&:hover": { backgroundColor: "#a0622d" },
                             }}
                         >
-                            Explore Cezves
+                            🏺 Explore Cezves
                         </Button>
                     </Box>
                 </Grid>
@@ -118,7 +121,7 @@ const AboutCraftSection: React.FC = () => {
                                 color: "#333",
                             }}
                         >
-                            Turkish Coffee — Reimagined
+                           ☕ Turkish Coffee — Reimagined
                         </Typography>
                         <Typography
                             variant="body1"
@@ -128,17 +131,19 @@ const AboutCraftSection: React.FC = () => {
                                 mb: 3,
                             }}
                         >
-                            {products[3]?.description}
+                            { products[3]?.description}
                         </Typography>
 
                         <Button
+                            component={NavLink}
+                            to="/discover-coffee"
                             variant="contained"
                             sx={{
                                 backgroundColor: "#b87333",
                                 "&:hover": { backgroundColor: "#a0622d" },
                             }}
                         >
-                            Discover Our Coffee
+                            ☕ Discover Our Coffee
                         </Button>
                     </Box>
                 </Grid>
@@ -147,7 +152,7 @@ const AboutCraftSection: React.FC = () => {
                 <Grid size={{ xs: 12, md: 6 }}>
                     <Box
                         component={motion.img}
-                        src={`${API_IMAGES_URL}/${products[3]?.imageUrl}`}
+                        src={"/images/doas_coffee_natural.jpg"}
                         alt={products[3]?.name || "Turkish Coffee"}
                         initial={{ opacity: 0, x: 50 }}
                         whileInView={{ opacity: 1, x: 0 }}

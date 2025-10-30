@@ -32,15 +32,22 @@ import { useTheme } from "@mui/material/styles";
 import { useUser } from "../hooks/useUser";
 import { useAuth } from "../context/AuthContext";
 import useScrollTrigger from "@mui/material/useScrollTrigger";
-import "@fontsource/poppins/300.css";
-import "@fontsource/poppins/400.css";
+import { useNavigate } from "react-router-dom";
+import { useCart } from "../context/CartContext";
 
+// modern fontlar
+import "@fontsource/inter/400.css";
+import "@fontsource/inter/500.css";
+import "@fontsource/inter/600.css";
+import "@fontsource/inter-tight/500.css"
+import "@fontsource/poppins/500.css"
+import "@fontsource/outfit/500.css"
 const brandBrown = "#b87333";
 
 export default function Header() {
   const trigger = useScrollTrigger({ disableHysteresis: true, threshold: 0 });
-  const { token, logout } = useAuth();
-  const { user } = useUser(token);
+  const { token, logout, isAdmin } = useAuth();
+  const { user} = useUser(token);
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const theme = useTheme();
@@ -53,18 +60,26 @@ export default function Header() {
   };
   const handleClose = () => setAnchorEl(null);
 
+  // @ sonrasını kaldır, nokta ve alt çizgiyi boşluk yap
+  const displayName = email
+    ? email.split("@")[0].replace(/[._-]/g, " ").trim().replace(/\s+/g, " ")
+    : "Guest";
+
   const drawerLinks = token
     ? [
       { title: "All Orders", path: "/orders", icon: <ListAlt /> },
       { title: "User Info", path: "/profile", icon: <Info /> },
       { title: "Help", path: "/help", icon: <Help /> },
-      { title: "Dashboard", path: "/dashboard", icon: <Dashboard /> },
+      ...(isAdmin
+        ? [{ title: "Dashboard", path: "/dashboard", icon: <Dashboard /> }]
+        : []),
+
       {
         title: "Logout",
         icon: <Logout />,
         action: () => {
           logout();
-          window.location.href = "/login";
+          navigate("/login", { replace: true });
         },
       },
     ]
@@ -93,7 +108,9 @@ export default function Header() {
       <ListItemText primary={item.title} />
     </ListItem>
   );
-
+  
+  const { getTotalCount } = useCart(); // ✅ sepet sayısı için
+  const navigate = useNavigate(); // ✅ yönlendirme için
   return (
     <>
       <AppBar
@@ -102,88 +119,121 @@ export default function Header() {
           backgroundColor: "#fff",
           boxShadow: trigger ? 2 : 0,
           transition: "box-shadow 0.3s ease",
-          fontFamily: "Poppins, sans-serif",
-          height: 64, // sabit yükseklik
+          fontFamily: "Inter, sans-serif",
+          height: 64,
           display: "flex",
           justifyContent: "center",
+          overflowX: "hidden", // 🔧 mobil taşmayı engeller
         }}
       >
         <Toolbar
-          disableGutters
           sx={{
             justifyContent: "space-between",
             alignItems: "center",
-            px: { xs: 1, sm: 2 }, // kenar boşluklarını azalttık
-            minHeight: "60px !important",
+            px: { xs: 1.5, md: 4 },
+            minHeight: "64px !important",
             width: "100%",
-            maxWidth: "100vw",
-            overflow: "hidden",
+            maxWidth: "100vw", // 🔧 ekstra taşmaları önler
           }}
         >
-          {/* SOL: Logo */}
-          <Box
-            component={NavLink}
-            to="/home"
-            sx={{
-              display: "flex",
-              alignItems: "center",
-            }}
-          >
-            <Box
-              component="img"
-              src="./logo.png"
-              alt="DOA'S CEZVE"
-              sx={{
-                height: { xs: 38, sm: 44 },
-                width: "auto",
-                objectFit: "contain",
-                ml: { xs: 0, sm: 1 }, // sola yaklaştır
-                transition: "transform 0.25s ease",
-                "&:hover": { transform: "scale(1.04)" },
-              }}
-            />
-          </Box>
-
-          {/* SAĞ: Sepet + Avatar / Menü */}
+          {/* SOL: Logo + Menü */}
           <Stack
             direction="row"
             alignItems="center"
-            spacing={0.5}
-            sx={{
-              pr: { xs: 0.5, sm: 1 }, // sağ boşluğu azalttık
-            }}
+            spacing={{ xs: 1, md: 2 }}
+            sx={{ flexShrink: 1, minWidth: 0 }}
           >
-            <IconButton size="large">
-              <Badge
-                badgeContent={2}
+            <Box
+              component={NavLink}
+              to="/home"
+              sx={{
+                display: "flex",
+                alignItems: "center",
+                height: "100%",
+                flexShrink: 0,
+              }}
+            >
+              <Box
+                component="img"
+                src="./logo.png"
+                alt="DOA'S CEZVE"
                 sx={{
-                  "& .MuiBadge-badge": { backgroundColor: "#b87333" },
+                  height: { xs: 38, sm: 42 },
+                  width: "auto",
+                  objectFit: "contain",
+                  transition: "transform 0.25s ease",
+                  "&:hover": { transform: "scale(1.05)" },
+                }}
+              />
+            </Box>
+
+            {/* Masaüstü Menü */}
+            {!isMobile && (
+              <Stack direction="row" spacing={2} sx={{ ml: 1 }}>
+                {["Home", "About Doa's Cezve", "Blog", "Shop"].map(
+                  (title, idx) => (
+                    <Button
+                      key={idx}
+                      component={NavLink}
+                      to={`/${title.toLowerCase().replace(" ", "")}`}
+                      sx={{
+                        color: "#000",
+                        textTransform: "none",
+                        fontWeight: 400,
+                        fontSize: "1rem",
+                        "&.active": {
+                          color: brandBrown,
+                          fontWeight: 600,
+                          borderBottom: `2px solid ${brandBrown}`,
+                        },
+                        "&:hover": { color: brandBrown },
+                      }}
+                    >
+                      {title}
+                    </Button>
+                  )
+                )}
+              </Stack>
+            )}
+          </Stack>
+
+          {/* SAĞ: Sepet + Avatar + Menü */}
+          <Stack direction="row" alignItems="center" spacing={1}>
+            <IconButton size="large" component={NavLink} to="/checkout">
+              <Badge
+                badgeContent={getTotalCount()} // ✅ dinamik sayı
+                sx={{
+                  "& .MuiBadge-badge": { backgroundColor: brandBrown },
                 }}
               >
-                <ShoppingCart sx={{ color: "#000", fontSize: 22 }} />
+                <ShoppingCart sx={{ color: "#000" }} />
               </Badge>
             </IconButton>
 
-            {isMobile ? (
-              <IconButton onClick={() => setDrawerOpen(true)} sx={{ p: 0.5 }}>
-                <MenuIcon sx={{ color: "#000", fontSize: 26 }} />
-              </IconButton>
-            ) : (
+            {/* Avatar masaüstü */}
+            {!isMobile && (
               <Avatar
-                src="./profile.jpg"
-                alt={email}
+                alt={displayName}
                 sx={{
-                  width: 36,
-                  height: 36,
+                  width: 38,
+                  height: 38,
                   cursor: "pointer",
                   "&:hover": { boxShadow: 2 },
                 }}
                 onClick={handleAvatarClick}
-              />
+              >
+                {displayName.charAt(0).toUpperCase()}
+              </Avatar>
+            )}
+
+            {/* Hamburger Menü mobil */}
+            {isMobile && (
+              <IconButton onClick={() => setDrawerOpen(true)}>
+                <MenuIcon sx={{ color: "#000" }} />
+              </IconButton>
             )}
           </Stack>
         </Toolbar>
-
       </AppBar>
 
       {/* Avatar Popover */}
@@ -195,11 +245,20 @@ export default function Header() {
         transformOrigin={{ vertical: "top", horizontal: "right" }}
       >
         <Box sx={{ p: 2, minWidth: 220 }}>
-          <Typography variant="subtitle1" sx={{ fontWeight: 600, mb: 1, textAlign: "center" }}>
-            Welcome, {user?.name ?? email}
+          <Typography
+            variant="subtitle1"
+            sx={{
+              fontFamily: "'Outfit', sans-serif",
+              fontWeight: 500,
+              fontSize: "1.05rem",
+              textAlign: "center",
+              color: "#d05d5d",
+            }}
+          >
+            Welcome, {displayName}
           </Typography>
           <Divider sx={{ mb: 1 }} />
-          <List>{drawerLinks.map(renderDrawerItem)}</List>
+          <List>{drawerLinks.filter(Boolean).map(renderDrawerItem)}</List>
         </Box>
       </Popover>
 
@@ -212,7 +271,11 @@ export default function Header() {
       >
         <Box sx={{ width: 260, p: 2 }}>
           <Box sx={{ textAlign: "center", mb: 2 }}>
-            <img src="./logo.png" alt="DOA'S CEZVE" style={{ width: 90 }} />
+            <img
+              src="./logo.png"
+              alt="DOA'S CEZVE"
+              style={{ width: 100, height: "auto", objectFit: "contain" }}
+            />
           </Box>
           <Divider sx={{ mb: 2 }} />
           <List>
@@ -220,7 +283,7 @@ export default function Header() {
               <ListItem
                 key={idx}
                 component={NavLink}
-                to={`/${title.toLowerCase().replaceAll(" ", "")}`}
+                to={`/${title.toLowerCase().replace(" ", "")}`}
                 onClick={() => setDrawerOpen(false)}
                 sx={{
                   "& .MuiListItemText-primary": { fontWeight: 500 },
@@ -232,7 +295,7 @@ export default function Header() {
             ))}
           </List>
           <Divider sx={{ mt: 2, mb: 1 }} />
-          <List>{drawerLinks.map(renderDrawerItem)}</List>
+          <List>{drawerLinks.filter(Boolean).map(renderDrawerItem)}</List>
         </Box>
       </Drawer>
     </>
