@@ -30,11 +30,16 @@ public class OrderController : ControllerBase
         var order = new Order
         {
             UserId = dto.UserId,
-            Total = dto.Items.Sum(i => i.Price * i.Quantity),
+            CustomerName = dto.CustomerName,
+            Address = dto.Address,
+            Phone = dto.Phone,
+            Status = dto.Status ?? "Pending",
+            TotalPrice = dto.Items.Sum(i => i.Price * i.Quantity),
             Items = dto.Items.Select(i => new OrderItem
             {
                 ProductId = i.ProductId,
                 ProductName = i.ProductName,
+                ImageUrl = i.ImageUrl ?? string.Empty,
                 Quantity = i.Quantity,
                 Price = i.Price
             }).ToList()
@@ -42,7 +47,7 @@ public class OrderController : ControllerBase
 
         _context.Orders.Add(order);
 
-        // ✅ Stok düşürme
+        // reduce stock
         foreach (var item in dto.Items)
         {
             var product = await _context.Products.FirstOrDefaultAsync(p => p.Id == item.ProductId);
@@ -56,6 +61,7 @@ public class OrderController : ControllerBase
         await _context.SaveChangesAsync();
         return Ok(new { order.Id, Message = "Order created successfully." });
     }
+
 
     // ✅ Tüm siparişleri listeleme (admin)
     [HttpGet]
@@ -93,5 +99,18 @@ public class OrderController : ControllerBase
 
         return Ok(new { order.Id, order.Status, Message = "Order status updated." });
     }
+
+    [HttpGet("user/{userId}")]
+    public async Task<IActionResult> GetOrdersByUser(string userId)
+    {
+        var orders = await _context.Orders
+            .Include(o => o.Items)
+            .Where(o => o.UserId == userId)
+            .OrderByDescending(o => o.CreatedAt)
+            .ToListAsync();
+
+        return Ok(orders);
+    }
+
 
 }

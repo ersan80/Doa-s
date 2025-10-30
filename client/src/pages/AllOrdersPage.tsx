@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState, useEffect } from "react";
 import {
     Box,
     Typography,
@@ -18,41 +18,26 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_IMAGES_URL = import.meta.env.VITE_API_IMAGES_URL;
 
 export default function AllOrdersPage() {
-    const {items} = useCart();
+    const { items, clearCart } = useCart();
     const navigate = useNavigate();
     const { email } = useAuth();
 
-    const [products, setProducts] = useState<any[]>([]);
-    const [loading, setLoading] = useState(true);
-
-    // 🧾 Kullanıcı bilgileri
     const [customerName, setCustomerName] = useState("");
     const [address, setAddress] = useState("");
     const [phone, setPhone] = useState("");
 
     useEffect(() => {
         if (items.length === 0) {
-            alert("Sepetiniz boş!");
+            alert("Your cart is empty!");
             navigate("/shop");
         }
-    }, [items]);
+    }, [items, navigate]);
 
-    // ✅ Backend’den ürünleri çek
-    useEffect(() => {
-        axios
-            .get(`${API_BASE_URL}/products`)
-            .then((res) => setProducts(res.data))
-            .catch((err) => console.error(err))
-            .finally(() => setLoading(false));
-    }, []);
-
-    // 🛒 Şimdilik tüm ürünleri sepet olarak göster (ileride Cart sistemi eklenecek)
-    const cartItems = products.slice(0, 2); // test amaçlı ilk 2 ürün
-    const total = cartItems.reduce((sum, i) => sum + i.price * (i.quantity ?? 1), 0);
+    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
     const handleSubmit = async () => {
         if (!customerName || !address || !phone) {
-            alert("Lütfen tüm bilgileri doldurun.");
+            alert("Please fill in all required fields.");
             return;
         }
 
@@ -62,10 +47,10 @@ export default function AllOrdersPage() {
             address,
             phone,
             status: "Pending",
-            items: cartItems.map((i) => ({
+            items: items.map((i) => ({
                 productId: i.id,
                 productName: i.name,
-                quantity: i.quantity ?? 1,
+                quantity: i.quantity,
                 price: i.price,
             })),
         };
@@ -74,49 +59,43 @@ export default function AllOrdersPage() {
             await axios.post(`${API_BASE_URL}/order`, orderData, {
                 headers: { "Content-Type": "application/json" },
             });
-            alert("☕ Siparişiniz başarıyla oluşturuldu!");
+            alert("Your order has been placed successfully!");
+            clearCart();
             navigate("/orders");
         } catch (error) {
             console.error(error);
-            alert("Sipariş oluşturulamadı!");
+            alert("Failed to create order.");
         }
     };
-
-    if (loading)
-        return (
-            <Typography sx={{ mt: 4, textAlign: "center" }}>
-                Ürünler yükleniyor...
-            </Typography>
-        );
 
     return (
         <Box sx={{ p: 3, maxWidth: 700, mx: "auto" }}>
             <Typography variant="h4" fontWeight={600} gutterBottom>
-                Siparişi Tamamla
+                Complete Your Order
             </Typography>
 
             <Divider sx={{ mb: 2 }} />
 
             <Typography variant="h6" gutterBottom>
-                Teslimat Bilgileri
+                Shipping Information
             </Typography>
 
             <TextField
-                label="Ad Soyad"
+                label="Full Name"
                 fullWidth
                 margin="normal"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
             />
             <TextField
-                label="Adres"
+                label="Address"
                 fullWidth
                 margin="normal"
                 value={address}
                 onChange={(e) => setAddress(e.target.value)}
             />
             <TextField
-                label="Telefon"
+                label="Phone"
                 fullWidth
                 margin="normal"
                 value={phone}
@@ -126,13 +105,13 @@ export default function AllOrdersPage() {
             <Divider sx={{ my: 3 }} />
 
             <Typography variant="h6" gutterBottom>
-                Sepet Özeti
+                Cart Summary
             </Typography>
 
-            {cartItems.length === 0 ? (
-                <Typography color="text.secondary">Sepetiniz boş.</Typography>
+            {items.length === 0 ? (
+                <Typography color="text.secondary">Your cart is empty.</Typography>
             ) : (
-                cartItems.map((item) => (
+                items.map((item) => (
                     <Card
                         key={item.id}
                         sx={{
@@ -158,10 +137,10 @@ export default function AllOrdersPage() {
                                 {item.name}
                             </Typography>
                             <Typography variant="body2" color="text.secondary">
-                                {item.quantity ?? 1} × ${item.price.toFixed(2)}
+                                {item.quantity} × ${item.price.toFixed(2)}
                             </Typography>
                             <Typography variant="body1" fontWeight={600}>
-                                ${(item.price * (item.quantity ?? 1)).toFixed(2)}
+                                ${(item.price * item.quantity).toFixed(2)}
                             </Typography>
                         </CardContent>
                     </Card>
@@ -170,7 +149,7 @@ export default function AllOrdersPage() {
 
             <Divider sx={{ my: 2 }} />
 
-            <Typography variant="h6">Toplam: ${total.toFixed(2)}</Typography>
+            <Typography variant="h6">Total: ${total.toFixed(2)}</Typography>
 
             <Button
                 variant="contained"
@@ -179,7 +158,7 @@ export default function AllOrdersPage() {
                 fullWidth
                 onClick={handleSubmit}
             >
-                Siparişi Tamamla
+                Place Order
             </Button>
         </Box>
     );
