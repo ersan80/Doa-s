@@ -1,10 +1,11 @@
 import React, { createContext, useContext, ReactNode, useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 interface AuthContextType {
     token: string | null;
     email: string | null;
     emailConfirmed: boolean;
-    isAdmin?: boolean; // ✅ eklendi
+    isAdmin?: boolean;
     login: (data: { token: string; email: string; emailConfirmed: boolean }) => void;
     logout: () => void;
 }
@@ -25,7 +26,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return stored === "true";
     });
 
-    const login = ({ token, email, emailConfirmed }: { token: string; email: string; emailConfirmed: boolean }) => {
+    const navigate = useNavigate();
+    const adminEmail = "kifipi9327@dropeso.com";
+
+    const login = ({
+        token,
+        email,
+        emailConfirmed,
+    }: {
+        token: string;
+        email: string;
+        emailConfirmed: boolean;
+    }) => {
         localStorage.setItem("token", token);
         localStorage.setItem("email", email);
         localStorage.setItem("emailConfirmed", String(emailConfirmed));
@@ -33,20 +45,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setEmail(email);
         setEmailConfirmed(emailConfirmed);
     };
-    const adminEmail = "kifipi9327@dropeso.com";
-    
+
     const logout = () => {
         localStorage.removeItem("token");
         localStorage.removeItem("email");
         localStorage.removeItem("emailConfirmed");
+
         setToken(null);
         setEmail(null);
         setEmailConfirmed(false);
-        window.location.href = "/catalog"
+        setTimeout(() => {
+            navigate("/home");
+        }, 100);
     };
-
-
-
 
     return (
         <AuthContext.Provider
@@ -54,7 +65,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 token,
                 email,
                 emailConfirmed,
-                isAdmin: email === adminEmail, // ✅ yeni alan
+                isAdmin: email === adminEmail,
                 login,
                 logout,
             }}
@@ -62,8 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             {children}
         </AuthContext.Provider>
     );
-
-
 };
 
 export const useAuth = () => useContext(AuthContext);
+

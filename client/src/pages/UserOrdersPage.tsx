@@ -11,6 +11,7 @@ import {
     Chip,
     Stack,
     CircularProgress,
+    Pagination,
 } from "@mui/material";
 import axios from "axios";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
@@ -44,15 +45,35 @@ export default function UserOrdersPage() {
     const [expandedId, setExpandedId] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
 
+    // 🧭 Pagination state
+    const [page, setPage] = useState(1);
+    const itemsPerPage = 5;
+    const pageCount = Math.ceil(orders.length / itemsPerPage);
+    const paginatedOrders = orders.slice(
+        (page - 1) * itemsPerPage,
+        page * itemsPerPage
+    );
+
     const handleExpand = (id: number) => {
         setExpandedId(expandedId === id ? null : id);
+    };
+
+    const handlePageChange = (_: React.ChangeEvent<unknown>, value: number) => {
+        setPage(value);
+        window.scrollTo({ top: 0, behavior: "smooth" }); // yukarı kaydır
     };
 
     useEffect(() => {
         const fetchOrders = async () => {
             try {
                 const res = await axios.get(`${API_BASE_URL}/order/user/${email}`);
-                setOrders(res.data);
+                // Siparişleri tarih sırasına göre (yeniden eskiye) sırala
+                setOrders(
+                    res.data.sort(
+                        (a: Order, b: Order) =>
+                            new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+                    )
+                );
             } catch (error) {
                 console.error(error);
             } finally {
@@ -98,11 +119,16 @@ export default function UserOrdersPage() {
 
     return (
         <Box sx={{ p: 3, maxWidth: 900, mx: "auto" }}>
-            <Typography variant="h4" fontWeight={600} gutterBottom>
+            <Typography
+                variant="h4"
+                fontWeight={600}
+                gutterBottom
+                sx={{ color: "#6f4e37" }}
+            >
                 My Orders
             </Typography>
 
-            {orders.map((order) => (
+            {paginatedOrders.map((order) => (
                 <Card key={order.id} sx={{ mb: 3, boxShadow: 3, borderRadius: 2 }}>
                     <CardContent>
                         <Stack
@@ -132,7 +158,7 @@ export default function UserOrdersPage() {
 
                         <Divider sx={{ my: 2 }} />
 
-                        {/* Display first product preview */}
+                        {/* İlk ürünü göster */}
                         {order.items.length > 0 && (
                             <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
                                 <CardMedia
@@ -150,8 +176,7 @@ export default function UserOrdersPage() {
                                         {order.items[0].productName}
                                     </Typography>
                                     <Typography color="text.secondary">
-                                        {order.items[0].quantity} × $
-                                        {order.items[0].price.toFixed(2)}
+                                        {order.items[0].quantity} × ${order.items[0].price.toFixed(2)}
                                     </Typography>
                                 </Box>
                             </Box>
@@ -235,6 +260,28 @@ export default function UserOrdersPage() {
                     </CardContent>
                 </Card>
             ))}
+
+            {/* ✅ Pagination component */}
+            {pageCount > 1 && (
+                <Box sx={{ display: "flex", justifyContent: "center", mt: 4 }}>
+                    <Pagination
+                        count={pageCount}
+                        page={page}
+                        onChange={handlePageChange}
+                        color="primary"
+                        sx={{
+                            "& .MuiPaginationItem-root": {
+                                color: "#6f4e37",
+                                fontWeight: 600,
+                            },
+                            "& .Mui-selected": {
+                                backgroundColor: "#6f4e37 !important",
+                                color: "#fff !important",
+                            },
+                        }}
+                    />
+                </Box>
+            )}
         </Box>
     );
 }

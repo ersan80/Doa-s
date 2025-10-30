@@ -16,6 +16,8 @@ import BlogCopper from "../pages/BlogCopper";
 import ExploreCezves from "../pages/ExploreCezves";
 import DiscoverCoffee from "../pages/DiscoverCoffee";
 import UserOrdersPage from "../pages/UserOrdersPage"
+import UserInfoPage from "../pages/UserInfoPage";
+import HelpPage from "../pages/HelpPage";
 
 export const router = createBrowserRouter([
 
@@ -35,7 +37,10 @@ export const router = createBrowserRouter([
             { path: "/blog/copper", element: <BlogCopper /> },
             { path: "/explore-cezves", element: <ExploreCezves /> },
             { path: "discover-coffee", element: <DiscoverCoffee /> },
-            { path: "/orders", element: <UserOrdersPage />},
+            { path: "/orders", element: <UserOrdersPage /> },
+            { path: "/profile", element: <UserInfoPage /> },
+            { path: "/help", element: <HelpPage /> },
+
             {
                 path: "/dashboard",
                 element: (

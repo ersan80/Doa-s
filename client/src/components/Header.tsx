@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   ShoppingCart,
   Menu as MenuIcon,
@@ -27,43 +27,47 @@ import {
   Popover,
   Typography,
 } from "@mui/material";
-import { NavLink } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import { useUser } from "../hooks/useUser";
 import { useAuth } from "../context/AuthContext";
-import useScrollTrigger from "@mui/material/useScrollTrigger";
-import { useNavigate } from "react-router-dom";
 import { useCart } from "../context/CartContext";
+import useScrollTrigger from "@mui/material/useScrollTrigger";
 
-// modern fontlar
-import "@fontsource/inter/400.css";
-import "@fontsource/inter/500.css";
-import "@fontsource/inter/600.css";
-import "@fontsource/inter-tight/500.css"
-import "@fontsource/poppins/500.css"
-import "@fontsource/outfit/500.css"
 const brandBrown = "#b87333";
 
 export default function Header() {
   const trigger = useScrollTrigger({ disableHysteresis: true, threshold: 0 });
   const { token, logout, isAdmin } = useAuth();
-  const { user} = useUser(token);
-  const [drawerOpen, setDrawerOpen] = useState(false);
-  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const { user } = useUser(token);
+  const { getTotalCount } = useCart();
+  const navigate = useNavigate();
+
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
+  const [profile, setProfile] = useState<{ name?: string; avatar?: string | null }>({});
 
   const email = user?.email ?? "";
-
-  const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => {
-    setAnchorEl(event.currentTarget);
-  };
-  const handleClose = () => setAnchorEl(null);
-
-  // @ sonrasını kaldır, nokta ve alt çizgiyi boşluk yap
   const displayName = email
     ? email.split("@")[0].replace(/[._-]/g, " ").trim().replace(/\s+/g, " ")
     : "Guest";
+
+  // 🔄 Profil foto ve isim localStorage’dan sürekli dinle
+  useEffect(() => {
+    const loadProfile = () => {
+      const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
+      if (stored.email === email) {
+        setProfile({ name: stored.name, avatar: stored.avatar });
+      } else {
+        setProfile({});
+      }
+    };
+    loadProfile();
+    window.addEventListener("profile-updated", loadProfile);
+    return () => window.removeEventListener("profile-updated", loadProfile);
+  }, [email]);
 
   const drawerLinks = token
     ? [
@@ -73,7 +77,6 @@ export default function Header() {
       ...(isAdmin
         ? [{ title: "Dashboard", path: "/dashboard", icon: <Dashboard /> }]
         : []),
-
       {
         title: "Logout",
         icon: <Logout />,
@@ -108,9 +111,10 @@ export default function Header() {
       <ListItemText primary={item.title} />
     </ListItem>
   );
-  
-  const { getTotalCount } = useCart(); // ✅ sepet sayısı için
-  const navigate = useNavigate(); // ✅ yönlendirme için
+
+  const handleAvatarClick = (event: React.MouseEvent<HTMLElement>) => setAnchorEl(event.currentTarget);
+  const handleClose = () => setAnchorEl(null);
+
   return (
     <>
       <AppBar
@@ -121,28 +125,12 @@ export default function Header() {
           transition: "box-shadow 0.3s ease",
           fontFamily: "Inter, sans-serif",
           height: 64,
-          display: "flex",
           justifyContent: "center",
-          overflowX: "hidden", // 🔧 mobil taşmayı engeller
         }}
       >
-        <Toolbar
-          sx={{
-            justifyContent: "space-between",
-            alignItems: "center",
-            px: { xs: 1.5, md: 4 },
-            minHeight: "64px !important",
-            width: "100%",
-            maxWidth: "100vw", // 🔧 ekstra taşmaları önler
-          }}
-        >
-          {/* SOL: Logo + Menü */}
-          <Stack
-            direction="row"
-            alignItems="center"
-            spacing={{ xs: 1, md: 2 }}
-            sx={{ flexShrink: 1, minWidth: 0 }}
-          >
+        <Toolbar sx={{ justifyContent: "space-between", px: { xs: 1.5, md: 4 } }}>
+          {/* LEFT */}
+          <Stack direction="row" alignItems="center" spacing={{ xs: 1, md: 2 }}>
             <Box
               component={NavLink}
               to="/home"
@@ -150,7 +138,6 @@ export default function Header() {
                 display: "flex",
                 alignItems: "center",
                 height: "100%",
-                flexShrink: 0,
               }}
             >
               <Box
@@ -161,72 +148,64 @@ export default function Header() {
                   height: { xs: 38, sm: 42 },
                   width: "auto",
                   objectFit: "contain",
-                  transition: "transform 0.25s ease",
                   "&:hover": { transform: "scale(1.05)" },
                 }}
               />
             </Box>
 
-            {/* Masaüstü Menü */}
             {!isMobile && (
-              <Stack direction="row" spacing={2} sx={{ ml: 1 }}>
-                {["Home", "About Doa's Cezve", "Blog", "Shop"].map(
-                  (title, idx) => (
-                    <Button
-                      key={idx}
-                      component={NavLink}
-                      to={`/${title.toLowerCase().replace(" ", "")}`}
-                      sx={{
-                        color: "#000",
-                        textTransform: "none",
-                        fontWeight: 400,
-                        fontSize: "1rem",
-                        "&.active": {
-                          color: brandBrown,
-                          fontWeight: 600,
-                          borderBottom: `2px solid ${brandBrown}`,
-                        },
-                        "&:hover": { color: brandBrown },
-                      }}
-                    >
-                      {title}
-                    </Button>
-                  )
-                )}
+              <Stack direction="row" spacing={2}>
+                {["Home", "About Doa's Cezve", "Blog", "Shop"].map((title, idx) => (
+                  <Button
+                    key={idx}
+                    component={NavLink}
+                    to={`/${title.toLowerCase().replace(" ", "")}`}
+                    sx={{
+                      color: "#000",
+                      textTransform: "none",
+                      fontWeight: 400,
+                      "&.active": { color: brandBrown, borderBottom: `2px solid ${brandBrown}` },
+                      "&:hover": { color: brandBrown },
+                    }}
+                  >
+                    {title}
+                  </Button>
+                ))}
               </Stack>
             )}
           </Stack>
 
-          {/* SAĞ: Sepet + Avatar + Menü */}
+          {/* RIGHT */}
           <Stack direction="row" alignItems="center" spacing={1}>
             <IconButton size="large" component={NavLink} to="/checkout">
               <Badge
-                badgeContent={getTotalCount()} // ✅ dinamik sayı
-                sx={{
-                  "& .MuiBadge-badge": { backgroundColor: brandBrown },
-                }}
+                badgeContent={getTotalCount()}
+                sx={{ "& .MuiBadge-badge": { backgroundColor: brandBrown } }}
               >
                 <ShoppingCart sx={{ color: "#000" }} />
               </Badge>
             </IconButton>
 
-            {/* Avatar masaüstü */}
+            {/* ✅ Profil foto veya isim baş harfi */}
             {!isMobile && (
               <Avatar
-                alt={displayName}
+                src={profile.avatar || ""}
+                alt={profile.name || displayName}
                 sx={{
                   width: 38,
                   height: 38,
                   cursor: "pointer",
+                  bgcolor: "#c49b63",
+                  color: "#fff",
+                  fontWeight: 600,
                   "&:hover": { boxShadow: 2 },
                 }}
                 onClick={handleAvatarClick}
               >
-                {displayName.charAt(0).toUpperCase()}
+                {!profile.avatar && (profile.name?.[0] || displayName[0]).toUpperCase()}
               </Avatar>
             )}
 
-            {/* Hamburger Menü mobil */}
             {isMobile && (
               <IconButton onClick={() => setDrawerOpen(true)}>
                 <MenuIcon sx={{ color: "#000" }} />
@@ -236,7 +215,7 @@ export default function Header() {
         </Toolbar>
       </AppBar>
 
-      {/* Avatar Popover */}
+      {/* Popover Menü */}
       <Popover
         open={Boolean(anchorEl)}
         anchorEl={anchorEl}
@@ -248,34 +227,23 @@ export default function Header() {
           <Typography
             variant="subtitle1"
             sx={{
-              fontFamily: "'Outfit', sans-serif",
               fontWeight: 500,
-              fontSize: "1.05rem",
               textAlign: "center",
-              color: "#d05d5d",
+              color: "#a75e22",
             }}
           >
-            Welcome, {displayName}
+            Welcome, {profile.name || displayName}
           </Typography>
-          <Divider sx={{ mb: 1 }} />
+          <Divider sx={{ my: 1 }} />
           <List>{drawerLinks.filter(Boolean).map(renderDrawerItem)}</List>
         </Box>
       </Popover>
 
-      {/* Mobil Drawer Menü */}
-      <Drawer
-        anchor="right"
-        open={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        ModalProps={{ keepMounted: true }}
-      >
+      {/* Mobil Drawer */}
+      <Drawer anchor="right" open={drawerOpen} onClose={() => setDrawerOpen(false)}>
         <Box sx={{ width: 260, p: 2 }}>
           <Box sx={{ textAlign: "center", mb: 2 }}>
-            <img
-              src="./logo.png"
-              alt="DOA'S CEZVE"
-              style={{ width: 100, height: "auto", objectFit: "contain" }}
-            />
+            <img src="./logo.png" alt="DOA'S CEZVE" style={{ width: 100, height: "auto" }} />
           </Box>
           <Divider sx={{ mb: 2 }} />
           <List>
@@ -285,16 +253,12 @@ export default function Header() {
                 component={NavLink}
                 to={`/${title.toLowerCase().replace(" ", "")}`}
                 onClick={() => setDrawerOpen(false)}
-                sx={{
-                  "& .MuiListItemText-primary": { fontWeight: 500 },
-                  "&:hover": { backgroundColor: "#f5f5f5" },
-                }}
               >
                 <ListItemText primary={title} />
               </ListItem>
             ))}
           </List>
-          <Divider sx={{ mt: 2, mb: 1 }} />
+          <Divider sx={{ my: 2 }} />
           <List>{drawerLinks.filter(Boolean).map(renderDrawerItem)}</List>
         </Box>
       </Drawer>

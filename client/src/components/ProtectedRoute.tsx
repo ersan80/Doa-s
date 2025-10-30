@@ -8,6 +8,8 @@ interface ProtectedRouteProps {
     requireAdmin?: boolean;
 }
 
+const PUBLIC_PATHS = ["/home", "/", "/shop", "/login", "/register", "/about", "/blog"];
+
 const ProtectedRoute = ({
     children,
     requireVerifiedEmail = false,
@@ -19,17 +21,22 @@ const ProtectedRoute = ({
 
     if (loading) return <div className="p-4 text-center">Loading...</div>;
 
-    // 🔒 Eğer giriş yapılmamışsa login'e yönlendir
+    // 🔓 PUBLIC sayfalar için kontrol atla
+    if (PUBLIC_PATHS.includes(location.pathname)) {
+        return children;
+    }
+
+    // 🔒 Giriş yapılmamışsa login'e yönlendir
     if (!token || !user) {
         return <Navigate to="/login" state={{ from: location }} replace />;
     }
 
-    // 🔐 Eğer bu sayfa admin istiyorsa ama kullanıcı admin değilse
+    // 🔐 Admin zorunluluğu varsa
     if (requireAdmin && !isAdmin) {
         return <Navigate to="/home" replace />;
     }
 
-    // 📧 E-posta doğrulaması gerekli ama kullanıcı doğrulanmamışsa
+    // 📧 Email doğrulama zorunluluğu varsa
     if (requireVerifiedEmail && !user.isEmailConfirmed) {
         return <Navigate to="/confirm-email" replace />;
     }

@@ -1,14 +1,18 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import {
     Box,
-    Typography,
-    TextField,
     Button,
-    Divider,
     Card,
     CardMedia,
     CardContent,
+    Divider,
+    Grid,
+    IconButton,
+    TextField,
+    Typography,
+    Tooltip,
 } from "@mui/material";
+import { Add, Remove, Delete, Star, StarBorder } from "@mui/icons-material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -18,38 +22,88 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_IMAGES_URL = import.meta.env.VITE_API_IMAGES_URL;
 
 export default function AllOrdersPage() {
-    const { items, clearCart } = useCart();
+    const { items, hydrated, updateQuantity, removeFromCart, clearCart } = useCart();
     const navigate = useNavigate();
     const { email } = useAuth();
 
-    const [customerName, setCustomerName] = useState("");
+    const [fullName, setFullName] = useState("");
     const [address, setAddress] = useState("");
+    const [apt, setApt] = useState("");
+    const [city, setCity] = useState("");
+    const [state, setState] = useState("");
+    const [zip, setZip] = useState("");
     const [phone, setPhone] = useState("");
+    const [discountCode, setDiscountCode] = useState("");
+    const [discountValue, setDiscountValue] = useState(0);
+    const [savedAddresses, setSavedAddresses] = useState<string[]>([]);
+    const [defaultAddress, setDefaultAddress] = useState<string | null>(null);
 
+    // ✅ sepette ürün yoksa shop’a yönlendir
     useEffect(() => {
-        if (items.length === 0) {
-            alert("Your cart is empty!");
+        if (!hydrated) return;
+        if (items.length === 0 && window.location.pathname !== "/orders") {
             navigate("/shop");
         }
-    }, [items, navigate]);
+    }, [hydrated, items.length, navigate]);
 
-    const total = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+    // ✅ profil bilgilerini çek (adres önerileri dahil)
+    useEffect(() => {
+        const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
+        if (stored.email === email) {
+            setFullName(stored.name || "");
+            setSavedAddresses(stored.savedAddresses || []);
+            if (stored.defaultAddress) {
+                setAddress(stored.defaultAddress);
+                setDefaultAddress(stored.defaultAddress);
+            }
+        }
+    }, [email]);
 
+    const subtotal = useMemo(
+        () => items.reduce((sum, i) => sum + i.price * i.quantity, 0),
+        [items]
+    );
+
+    const total = useMemo(
+        () => Math.max(0, subtotal - discountValue),
+        [subtotal, discountValue]
+    );
+
+    const handleApplyDiscount = () => {
+        if (discountCode.trim().toUpperCase() === "WELCOME10") {
+            setDiscountValue(parseFloat((subtotal * 0.1).toFixed(2)));
+        } else {
+            setDiscountValue(0);
+        }
+    };
+
+    // ✅ Default Address seçimi
+    const handleSetDefaultAddress = (addr: string) => {
+        setDefaultAddress(addr);
+        const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
+        if (stored.email === email) {
+            stored.defaultAddress = addr;
+            localStorage.setItem("userProfile", JSON.stringify(stored));
+        }
+    };
+
+    // ✅ Siparişi gönder
     const handleSubmit = async () => {
-        if (!customerName || !address || !phone) {
+        if (!fullName || !address || !city || !state || !zip || !phone) {
             alert("Please fill in all required fields.");
             return;
         }
 
         const orderData = {
             userId: email ?? "guest",
-            customerName,
-            address,
+            customerName: fullName,
+            address: `${address}${apt ? ", " + apt : ""}, ${city}, ${state} ${zip}`,
             phone,
             status: "Pending",
             items: items.map((i) => ({
                 productId: i.id,
                 productName: i.name,
+                imageUrl: i.imageUrl ?? "",
                 quantity: i.quantity,
                 price: i.price,
             })),
@@ -59,107 +113,348 @@ export default function AllOrdersPage() {
             await axios.post(`${API_BASE_URL}/order`, orderData, {
                 headers: { "Content-Type": "application/json" },
             });
+
             alert("Your order has been placed successfully!");
+
+            // ✅ Yeni adresi kaydetme kontrolü
+            const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
+            if (stored.email === email && address) {
+                const isNew = !(stored.savedAddresses || []).includes(address);
+                if (isNew && confirm("Save this new address to your address book?")) {
+                    const updated = {
+                        ...stored,
+                        savedAddresses: [...(stored.savedAddresses || []), address],
+                    };
+                    localStorage.setItem("userProfile", JSON.stringify(updated));
+                    window.dispatchEvent(new Event("profile-updated"));
+                }
+            }
+
             clearCart();
-            navigate("/orders");
-        } catch (error) {
-            console.error(error);
+            navigate("/orders", { replace: true });
+        } catch (err) {
+            console.error(err);
             alert("Failed to create order.");
         }
     };
 
+    if (!hydrated) {
+        return <Box sx={{ p: 4 }}>Loading your cart...</Box>;
+    }
+
     return (
-        <Box sx={{ p: 3, maxWidth: 700, mx: "auto" }}>
-            <Typography variant="h4" fontWeight={600} gutterBottom>
-                Complete Your Order
-            </Typography>
-
-            <Divider sx={{ mb: 2 }} />
-
-            <Typography variant="h6" gutterBottom>
-                Shipping Information
-            </Typography>
-
-            <TextField
-                label="Full Name"
-                fullWidth
-                margin="normal"
-                value={customerName}
-                onChange={(e) => setCustomerName(e.target.value)}
-            />
-            <TextField
-                label="Address"
-                fullWidth
-                margin="normal"
-                value={address}
-                onChange={(e) => setAddress(e.target.value)}
-            />
-            <TextField
-                label="Phone"
-                fullWidth
-                margin="normal"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-            />
-
-            <Divider sx={{ my: 3 }} />
-
-            <Typography variant="h6" gutterBottom>
-                Cart Summary
-            </Typography>
-
-            {items.length === 0 ? (
-                <Typography color="text.secondary">Your cart is empty.</Typography>
-            ) : (
-                items.map((item) => (
-                    <Card
-                        key={item.id}
+        <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1400, mx: "auto" }}>
+            <Grid
+                container
+                spacing={3}
+                alignItems="flex-start"
+                wrap="nowrap"
+                sx={{
+                    flexDirection: { xs: "column", md: "row" },
+                    overflow: "hidden",
+                }}
+            >
+                {/* LEFT — ORDER SUMMARY */}
+                <Grid
+                    sx={{
+                        xs: 12,
+                        md: 5,
+                        flexBasis: { md: "40%" },
+                        flexShrink: 0,
+                        backgroundColor: "#fafafa",
+                        p: 3,
+                        borderRadius: 3,
+                        boxShadow: 1,
+                        position: { md: "sticky" },
+                        top: { md: 20 },
+                        maxHeight: { md: "85vh" },
+                        overflowY: { md: "auto", xs: "visible" },
+                    }}
+                >
+                    <Typography
+                        variant="h5"
+                        fontWeight={700}
+                        gutterBottom
                         sx={{
-                            display: "flex",
                             mb: 2,
-                            borderRadius: 2,
-                            boxShadow: 1,
-                            overflow: "hidden",
+                            color: "#a75e22",
+                            textTransform: "uppercase",
                         }}
                     >
-                        <CardMedia
-                            component="img"
-                            sx={{ width: 120, height: 120, objectFit: "cover" }}
-                            image={
-                                item.imageUrl
-                                    ? `${API_IMAGES_URL}/${item.imageUrl}`
-                                    : "/placeholder.jpg"
-                            }
-                            alt={item.name}
+                        Order Summary
+                    </Typography>
+
+                    {items.map((item) => (
+                        <Card
+                            key={item.id}
+                            sx={{
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "space-between",
+                                mb: 2,
+                                p: 1,
+                                borderRadius: 2,
+                                background: "white",
+                                boxShadow: 0,
+                                transition: "transform 0.2s ease",
+                                "&:hover": { transform: "scale(1.02)" },
+                            }}
+                        >
+                            <Box sx={{ display: "flex", alignItems: "center" }}>
+                                <CardMedia
+                                    component="img"
+                                    sx={{
+                                        width: 60,
+                                        height: 60,
+                                        borderRadius: 1,
+                                        objectFit: "cover",
+                                        mr: 2,
+                                    }}
+                                    image={
+                                        item.imageUrl
+                                            ? `${API_IMAGES_URL}/${item.imageUrl}`
+                                            : "/placeholder.jpg"
+                                    }
+                                    alt={item.name}
+                                />
+                                <CardContent sx={{ p: 0 }}>
+                                    <Typography variant="subtitle2" fontWeight={700}>
+                                        {item.name}
+                                    </Typography>
+                                    <Typography variant="body2" color="text.secondary">
+                                        {item.quantity} × ${item.price.toFixed(2)}
+                                    </Typography>
+                                </CardContent>
+                            </Box>
+
+                            <Box sx={{ display: "flex", alignItems: "center", gap: 0.5 }}>
+                                <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() =>
+                                        item.quantity > 1
+                                            ? updateQuantity(item.id, item.quantity - 1)
+                                            : removeFromCart(item.id)
+                                    }
+                                >
+                                    <Remove fontSize="small" />
+                                </IconButton>
+                                <Typography
+                                    variant="body2"
+                                    fontWeight={700}
+                                    sx={{ minWidth: 20, textAlign: "center" }}
+                                >
+                                    {item.quantity}
+                                </Typography>
+                                <IconButton
+                                    size="small"
+                                    color="success"
+                                    onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                                >
+                                    <Add fontSize="small" />
+                                </IconButton>
+                                <IconButton
+                                    size="small"
+                                    color="error"
+                                    onClick={() => removeFromCart(item.id)}
+                                >
+                                    <Delete fontSize="small" />
+                                </IconButton>
+                            </Box>
+                        </Card>
+                    ))}
+
+                    <Divider sx={{ my: 2 }} />
+
+                    <Box sx={{ display: "flex", gap: 1 }}>
+                        <TextField
+                            fullWidth
+                            label="Discount Code"
+                            value={discountCode}
+                            onChange={(e) => setDiscountCode(e.target.value)}
+                            size="small"
                         />
-                        <CardContent sx={{ flex: "1 0 auto" }}>
-                            <Typography variant="subtitle1" fontWeight={600}>
-                                {item.name}
-                            </Typography>
-                            <Typography variant="body2" color="text.secondary">
-                                {item.quantity} × ${item.price.toFixed(2)}
-                            </Typography>
-                            <Typography variant="body1" fontWeight={600}>
-                                ${(item.price * item.quantity).toFixed(2)}
-                            </Typography>
-                        </CardContent>
-                    </Card>
-                ))
-            )}
+                        <Button
+                            variant="outlined"
+                            onClick={handleApplyDiscount}
+                            sx={{
+                                color: "#5e3d1e",
+                                borderColor: "#5e3d1e",
+                                "&:hover": {
+                                    backgroundColor: "#5e3d1e",
+                                    color: "#fff",
+                                },
+                            }}
+                        >
+                            Apply
+                        </Button>
+                    </Box>
 
-            <Divider sx={{ my: 2 }} />
+                    <Box sx={{ mt: 3 }}>
+                        <Typography variant="body1">
+                            Subtotal: ${subtotal.toFixed(2)}
+                        </Typography>
+                        {discountValue > 0 && (
+                            <Typography color="success.main">
+                                Discount: -${discountValue.toFixed(2)}
+                            </Typography>
+                        )}
+                        <Typography variant="h6" fontWeight={800} sx={{ mt: 1 }}>
+                            Total: ${total.toFixed(2)}
+                        </Typography>
+                    </Box>
+                </Grid>
 
-            <Typography variant="h6">Total: ${total.toFixed(2)}</Typography>
+                {/* RIGHT — CONTACT FORM */}
+                <Grid sx={{ xs: 12, md: 7, flexBasis: { md: "60%" } }}>
+                    <Box
+                        sx={{
+                            p: { xs: 2, md: 4 },
+                            borderRadius: 3,
+                            boxShadow: 1,
+                            backgroundColor: "white",
+                            minHeight: { md: "80vh" },
+                            display: "flex",
+                            flexDirection: "column",
+                            justifyContent: "space-between",
+                        }}
+                    >
+                        <Box>
+                            <Typography
+                                variant="h5"
+                                fontWeight={700}
+                                gutterBottom
+                                sx={{
+                                    color: "#a75e22",
+                                    textTransform: "uppercase",
+                                }}
+                            >
+                                Contact & Delivery
+                            </Typography>
 
-            <Button
-                variant="contained"
-                color="success"
-                sx={{ mt: 3 }}
-                fullWidth
-                onClick={handleSubmit}
-            >
-                Place Order
-            </Button>
+                            <Grid container spacing={2}>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Full Name"
+                                        value={fullName}
+                                        onChange={(e) => setFullName(e.target.value)}
+                                    />
+                                </Grid>
+
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Address"
+                                        value={address}
+                                        onChange={(e) => setAddress(e.target.value)}
+                                    />
+                                    {savedAddresses.length > 0 && (
+                                        <Box sx={{ mt: 1, display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                            {savedAddresses.map((addr, i) => (
+                                                <Button
+                                                    key={i}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    sx={{
+                                                        textTransform: "none",
+                                                        borderColor: "#6f4e37",
+                                                        color: "#6f4e37",
+                                                        "&:hover": { bgcolor: "#f3ece6" },
+                                                    }}
+                                                    onClick={() => setAddress(addr)}
+                                                    endIcon={
+                                                        addr === defaultAddress ? (
+                                                            <Tooltip title="Default Address">
+                                                                <Star sx={{ color: "#c49b63" }} />
+                                                            </Tooltip>
+                                                        ) : (
+                                                            <Tooltip title="Set as Default">
+                                                                <StarBorder
+                                                                    sx={{ color: "#b5a08a", cursor: "pointer" }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleSetDefaultAddress(addr);
+                                                                    }}
+                                                                />
+                                                            </Tooltip>
+                                                        )
+                                                    }
+                                                >
+                                                    {addr}
+                                                </Button>
+                                            ))}
+                                        </Box>
+                                    )}
+                                </Grid>
+
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="Apartment, suite, etc. (optional)"
+                                        value={apt}
+                                        onChange={(e) => setApt(e.target.value)}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="City"
+                                        value={city}
+                                        onChange={(e) => setCity(e.target.value)}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="State"
+                                        value={state}
+                                        onChange={(e) => setState(e.target.value)}
+                                    />
+                                </Grid>
+                                <Grid item xs={12} md={6}>
+                                    <TextField
+                                        fullWidth
+                                        label="ZIP Code"
+                                        value={zip}
+                                        onChange={(e) => setZip(e.target.value)}
+                                    />
+                                </Grid>
+                                <Grid item xs={12}>
+                                    <TextField
+                                        fullWidth
+                                        label="Phone"
+                                        value={phone}
+                                        onChange={(e) => setPhone(e.target.value)}
+                                    />
+                                </Grid>
+                            </Grid>
+                        </Box>
+
+                        <Button
+                            variant="contained"
+                            size="large"
+                            fullWidth
+                            sx={{
+                                mt: 4,
+                                py: 1.7,
+                                fontSize: "1.1rem",
+                                background: "linear-gradient(135deg, #6f4e37, #c49b63)",
+                                color: "white",
+                                fontWeight: 700,
+                                borderRadius: 2,
+                                "&:hover": {
+                                    background: "linear-gradient(135deg, #5c3c2a, #d1a25a)",
+                                    transform: "scale(1.02)",
+                                },
+                            }}
+                            onClick={handleSubmit}
+                        >
+                            Complete Order
+                        </Button>
+                    </Box>
+                </Grid>
+            </Grid>
         </Box>
     );
 }
