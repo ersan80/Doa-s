@@ -72,7 +72,7 @@ export default function DashboardPage() {
                             <TableCell>{o.customerName}</TableCell>
                             <TableCell>{o.address}</TableCell>
                             <TableCell>{o.phone}</TableCell>
-                            <TableCell>${o.total.toFixed(2)}</TableCell>
+                            <TableCell>${Number(o.totalPrice ?? o.total ?? 0).toFixed(2)}</TableCell>
                             <TableCell>
                                 <Chip
                                     label={o.status}

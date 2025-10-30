@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useContext, useState, useEffect, useMemo } from "react";
+import { useAuth } from "./AuthContext";
 
 export interface CartItem {
     id: number;
@@ -10,6 +11,7 @@ export interface CartItem {
 
 interface CartContextType {
     items: CartItem[];
+    hydrated: boolean;
     addToCart: (item: CartItem) => void;
     removeFromCart: (id: number) => void;
     updateQuantity: (id: number, qty: number) => void;
@@ -19,23 +21,34 @@ interface CartContextType {
 
 const CartContext = createContext<CartContextType | null>(null);
 
-export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-    const [items, setItems] = useState<CartItem[]>(() => {
-        // ✅ sayfa ilk yüklendiğinde localStorage'dan oku
-        const stored = localStorage.getItem("cartItems");
-        return stored ? JSON.parse(stored) : [];
-    });
+const STORAGE_KEY = (userId: string | null) =>
+    userId ? `cart:${userId}` : "cart:guest";
 
-    // ✅ her değişiklikte localStorage'a yaz
+export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    const { email } = useAuth();
+    const storageKey = useMemo(() => STORAGE_KEY(email ?? null), [email]);
+
+    const [items, setItems] = useState<CartItem[]>([]);
+    const [hydrated, setHydrated] = useState(false);
+
+    // ✅ localStorage'dan sepeti yükle (kullanıcı değiştiğinde de)
     useEffect(() => {
-        localStorage.setItem("cartItems", JSON.stringify(items));
-    }, [items]);
+        const raw = localStorage.getItem(storageKey);
+        setItems(raw ? JSON.parse(raw) : []);
+        setHydrated(true);
+    }, [storageKey]);
+
+    // ✅ değişiklikleri storage'a kaydet
+    useEffect(() => {
+        if (!hydrated) return;
+        localStorage.setItem(storageKey, JSON.stringify(items));
+    }, [items, storageKey, hydrated]);
 
     const addToCart = (item: CartItem) => {
-        setItems(prev => {
-            const found = prev.find(i => i.id === item.id);
+        setItems((prev) => {
+            const found = prev.find((i) => i.id === item.id);
             if (found) {
-                return prev.map(i =>
+                return prev.map((i) =>
                     i.id === item.id ? { ...i, quantity: i.quantity + 1 } : i
                 );
             }
@@ -44,21 +57,31 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
     };
 
     const removeFromCart = (id: number) =>
-        setItems(prev => prev.filter(i => i.id !== id));
+        setItems((prev) => prev.filter((i) => i.id !== id));
 
     const updateQuantity = (id: number, qty: number) =>
-        setItems(prev =>
-            prev.map(i => (i.id === id ? { ...i, quantity: Math.max(1, qty) } : i))
+        setItems((prev) =>
+            prev
+                .map((i) => (i.id === id ? { ...i, quantity: Math.max(0, qty) } : i))
+                .filter((i) => i.quantity > 0)
         );
 
     const getTotalCount = () =>
         items.reduce((sum, i) => sum + i.quantity, 0);
 
-    const clearCart = () => setItems([]);
+    const clearCart = () => setItems([]); // sadece RAM'i temizler, storage'daki kayıt durur
 
     return (
         <CartContext.Provider
-            value={{ items, addToCart, removeFromCart, updateQuantity, getTotalCount, clearCart }}
+            value={{
+                items,
+                hydrated,
+                addToCart,
+                removeFromCart,
+                updateQuantity,
+                getTotalCount,
+                clearCart,
+            }}
         >
             {children}
         </CartContext.Provider>
