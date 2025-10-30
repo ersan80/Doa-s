@@ -2,7 +2,11 @@ import { useEffect, useState } from "react";
 import { fetchJson } from "../utils/fetchJson";
 
 interface User {
+  id?: number;
+  name?: string;
   email: string;
+  avatarUrl?: string;
+  defaultAddress?: string;
   isEmailConfirmed: boolean;
 }
 
@@ -11,7 +15,7 @@ export function useUser(token: string | null) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!token) { 
+    if (!token) {
       setUser(null);
       setLoading(false);
       return;
@@ -19,10 +23,13 @@ export function useUser(token: string | null) {
 
     async function fetchUser() {
       try {
-        const data = await fetchJson<User>(`${import.meta.env.VITE_API_BASE_URL}/User`);
+        // ✅ fetchJson zaten token'ı otomatik ekliyor
+        const data = await fetchJson<User>(
+          `${import.meta.env.VITE_API_BASE_URL}/user`
+        );
         setUser(data);
-      } catch (err: unknown) {
-        console.error(err);
+      } catch (err) {
+        console.error("❌ fetchUser error:", err);
         setUser(null);
       } finally {
         setLoading(false);

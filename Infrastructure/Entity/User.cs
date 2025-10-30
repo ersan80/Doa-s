@@ -29,5 +29,13 @@ namespace Infrastructure.Entity
         public string? EmailConfirmationToken { get; set; } // Rastgele token
         public DateTime? TokenExpiry { get; set; }          // Token geçerlilik süresi
         public DateTime? ConfirmedAt { get; set; }          // Onaylandığı tarih
+
+
+        // 🆕 Yeni alanlar:
+        public string? AvatarUrl { get; set; }
+        public string? DefaultAddress { get; set; }
+
+        // 🆕 Navigation property
+        public ICollection<Address>? Addresses { get; set; } = new List<Address>();
     }
 }

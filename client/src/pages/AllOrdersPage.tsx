@@ -10,8 +10,9 @@ import {
     IconButton,
     TextField,
     Typography,
+    Tooltip,
 } from "@mui/material";
-import { Add, Remove, Delete } from "@mui/icons-material";
+import { Add, Remove, Delete, Star, StarBorder } from "@mui/icons-material";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
@@ -34,19 +35,29 @@ export default function AllOrdersPage() {
     const [phone, setPhone] = useState("");
     const [discountCode, setDiscountCode] = useState("");
     const [discountValue, setDiscountValue] = useState(0);
+    const [savedAddresses, setSavedAddresses] = useState<string[]>([]);
+    const [defaultAddress, setDefaultAddress] = useState<string | null>(null);
 
+    // ✅ sepette ürün yoksa shop’a yönlendir
     useEffect(() => {
         if (!hydrated) return;
-        // sadece sepette ürün YOKSA ve sipariş sayfasında DEĞİLSE yönlendir
         if (items.length === 0 && window.location.pathname !== "/orders") {
             navigate("/shop");
         }
     }, [hydrated, items.length, navigate]);
 
-
-    if (!hydrated) {
-        return <Box sx={{ p: 4 }}>Loading your cart...</Box>;
-    }
+    // ✅ profil bilgilerini çek (adres önerileri dahil)
+    useEffect(() => {
+        const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
+        if (stored.email === email) {
+            setFullName(stored.name || "");
+            setSavedAddresses(stored.savedAddresses || []);
+            if (stored.defaultAddress) {
+                setAddress(stored.defaultAddress);
+                setDefaultAddress(stored.defaultAddress);
+            }
+        }
+    }, [email]);
 
     const subtotal = useMemo(
         () => items.reduce((sum, i) => sum + i.price * i.quantity, 0),
@@ -66,6 +77,17 @@ export default function AllOrdersPage() {
         }
     };
 
+    // ✅ Default Address seçimi
+    const handleSetDefaultAddress = (addr: string) => {
+        setDefaultAddress(addr);
+        const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
+        if (stored.email === email) {
+            stored.defaultAddress = addr;
+            localStorage.setItem("userProfile", JSON.stringify(stored));
+        }
+    };
+
+    // ✅ Siparişi gönder
     const handleSubmit = async () => {
         if (!fullName || !address || !city || !state || !zip || !phone) {
             alert("Please fill in all required fields.");
@@ -91,7 +113,23 @@ export default function AllOrdersPage() {
             await axios.post(`${API_BASE_URL}/order`, orderData, {
                 headers: { "Content-Type": "application/json" },
             });
+
             alert("Your order has been placed successfully!");
+
+            // ✅ Yeni adresi kaydetme kontrolü
+            const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
+            if (stored.email === email && address) {
+                const isNew = !(stored.savedAddresses || []).includes(address);
+                if (isNew && confirm("Save this new address to your address book?")) {
+                    const updated = {
+                        ...stored,
+                        savedAddresses: [...(stored.savedAddresses || []), address],
+                    };
+                    localStorage.setItem("userProfile", JSON.stringify(updated));
+                    window.dispatchEvent(new Event("profile-updated"));
+                }
+            }
+
             clearCart();
             navigate("/orders", { replace: true });
         } catch (err) {
@@ -99,6 +137,10 @@ export default function AllOrdersPage() {
             alert("Failed to create order.");
         }
     };
+
+    if (!hydrated) {
+        return <Box sx={{ p: 4 }}>Loading your cart...</Box>;
+    }
 
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1400, mx: "auto" }}>
@@ -115,7 +157,8 @@ export default function AllOrdersPage() {
                 {/* LEFT — ORDER SUMMARY */}
                 <Grid
                     sx={{
-                        xs: 12, md: 5,
+                        xs: 12,
+                        md: 5,
                         flexBasis: { md: "40%" },
                         flexShrink: 0,
                         backgroundColor: "#fafafa",
@@ -126,15 +169,6 @@ export default function AllOrdersPage() {
                         top: { md: 20 },
                         maxHeight: { md: "85vh" },
                         overflowY: { md: "auto", xs: "visible" },
-                        scrollbarWidth: "thin",
-                        "&::-webkit-scrollbar": {
-                            width: "6px",
-                        },
-                        "&::-webkit-scrollbar-thumb": {
-                            backgroundColor: "#b18a5a",
-                            borderRadius: "4px",
-                        },
-                        transition: "all 0.3s ease",
                     }}
                 >
                     <Typography
@@ -145,7 +179,6 @@ export default function AllOrdersPage() {
                             mb: 2,
                             color: "#a75e22",
                             textTransform: "uppercase",
-                            letterSpacing: 0.5,
                         }}
                     >
                         Order Summary
@@ -164,9 +197,7 @@ export default function AllOrdersPage() {
                                 background: "white",
                                 boxShadow: 0,
                                 transition: "transform 0.2s ease",
-                                "&:hover": {
-                                    transform: "scale(1.02)",
-                                },
+                                "&:hover": { transform: "scale(1.02)" },
                             }}
                         >
                             <Box sx={{ display: "flex", alignItems: "center" }}>
@@ -205,11 +236,9 @@ export default function AllOrdersPage() {
                                             ? updateQuantity(item.id, item.quantity - 1)
                                             : removeFromCart(item.id)
                                     }
-                                    sx={{ p: 0.5 }}
                                 >
                                     <Remove fontSize="small" />
                                 </IconButton>
-
                                 <Typography
                                     variant="body2"
                                     fontWeight={700}
@@ -217,21 +246,17 @@ export default function AllOrdersPage() {
                                 >
                                     {item.quantity}
                                 </Typography>
-
                                 <IconButton
                                     size="small"
                                     color="success"
                                     onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                    sx={{ p: 0.5 }}
                                 >
                                     <Add fontSize="small" />
                                 </IconButton>
-
                                 <IconButton
                                     size="small"
                                     color="error"
                                     onClick={() => removeFromCart(item.id)}
-                                    sx={{ p: 0.5, ml: 0.5 }}
                                 >
                                     <Delete fontSize="small" />
                                 </IconButton>
@@ -266,7 +291,9 @@ export default function AllOrdersPage() {
                     </Box>
 
                     <Box sx={{ mt: 3 }}>
-                        <Typography variant="body1">Subtotal: ${subtotal.toFixed(2)}</Typography>
+                        <Typography variant="body1">
+                            Subtotal: ${subtotal.toFixed(2)}
+                        </Typography>
                         {discountValue > 0 && (
                             <Typography color="success.main">
                                 Discount: -${discountValue.toFixed(2)}
@@ -279,14 +306,7 @@ export default function AllOrdersPage() {
                 </Grid>
 
                 {/* RIGHT — CONTACT FORM */}
-                <Grid
-                    sx={{
-                        xs: 12,
-                        md: 7,
-                        flexBasis: { md: "60%" },
-                        flexShrink: 0,
-                    }}
-                >
+                <Grid sx={{ xs: 12, md: 7, flexBasis: { md: "60%" } }}>
                     <Box
                         sx={{
                             p: { xs: 2, md: 4 },
@@ -297,8 +317,6 @@ export default function AllOrdersPage() {
                             display: "flex",
                             flexDirection: "column",
                             justifyContent: "space-between",
-                            transition: "box-shadow 0.3s ease",
-                            "&:hover": { boxShadow: 3 },
                         }}
                     >
                         <Box>
@@ -309,14 +327,13 @@ export default function AllOrdersPage() {
                                 sx={{
                                     color: "#a75e22",
                                     textTransform: "uppercase",
-                                    letterSpacing: 0.5,
                                 }}
                             >
                                 Contact & Delivery
                             </Typography>
 
                             <Grid container spacing={2}>
-                                <Grid sx={{ xs: 12 , md:6 }}>
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="Full Name"
@@ -324,15 +341,54 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setFullName(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid sx={{ xs: 12,md:6 }}>
+
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="Address"
                                         value={address}
                                         onChange={(e) => setAddress(e.target.value)}
                                     />
+                                    {savedAddresses.length > 0 && (
+                                        <Box sx={{ mt: 1, display: "flex", flexWrap: "wrap", gap: 1 }}>
+                                            {savedAddresses.map((addr, i) => (
+                                                <Button
+                                                    key={i}
+                                                    variant="outlined"
+                                                    size="small"
+                                                    sx={{
+                                                        textTransform: "none",
+                                                        borderColor: "#6f4e37",
+                                                        color: "#6f4e37",
+                                                        "&:hover": { bgcolor: "#f3ece6" },
+                                                    }}
+                                                    onClick={() => setAddress(addr)}
+                                                    endIcon={
+                                                        addr === defaultAddress ? (
+                                                            <Tooltip title="Default Address">
+                                                                <Star sx={{ color: "#c49b63" }} />
+                                                            </Tooltip>
+                                                        ) : (
+                                                            <Tooltip title="Set as Default">
+                                                                <StarBorder
+                                                                    sx={{ color: "#b5a08a", cursor: "pointer" }}
+                                                                    onClick={(e) => {
+                                                                        e.stopPropagation();
+                                                                        handleSetDefaultAddress(addr);
+                                                                    }}
+                                                                />
+                                                            </Tooltip>
+                                                        )
+                                                    }
+                                                >
+                                                    {addr}
+                                                </Button>
+                                            ))}
+                                        </Box>
+                                    )}
                                 </Grid>
-                                <Grid sx={{ xs: 12, md:6 }}>
+
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="Apartment, suite, etc. (optional)"
@@ -340,7 +396,7 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setApt(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid sx={{ xs: 12,md:6 }}>
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="City"
@@ -348,7 +404,7 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setCity(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid sx={{ xs: 12, md: 6 }}>
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="State"
@@ -356,7 +412,7 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setState(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid sx={{ xs: 12, md: 6 }}>
+                                <Grid item xs={12} md={6}>
                                     <TextField
                                         fullWidth
                                         label="ZIP Code"
@@ -364,7 +420,7 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setZip(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid sx={{ xs: 12 }}>
+                                <Grid item xs={12}>
                                     <TextField
                                         fullWidth
                                         label="Phone"
@@ -386,14 +442,10 @@ export default function AllOrdersPage() {
                                 background: "linear-gradient(135deg, #6f4e37, #c49b63)",
                                 color: "white",
                                 fontWeight: 700,
-                                letterSpacing: 0.5,
-                                textTransform: "uppercase",
                                 borderRadius: 2,
-                                transition: "all 0.3s ease",
                                 "&:hover": {
                                     background: "linear-gradient(135deg, #5c3c2a, #d1a25a)",
                                     transform: "scale(1.02)",
-                                    boxShadow: "0px 4px 15px rgba(96, 64, 40, 0.3)",
                                 },
                             }}
                             onClick={handleSubmit}
