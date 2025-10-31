@@ -100,7 +100,7 @@ namespace API.Controllers
                     await dto.Avatar.CopyToAsync(stream);
                 }
 
-                user.AvatarUrl = $"uploads/{fileName}";
+                user.AvatarUrl = $"/uploads/{fileName}";
             }
 
             await _context.SaveChangesAsync();
@@ -120,7 +120,8 @@ namespace API.Controllers
                 City = dto.City,
                 State = dto.State,
                 Zip = dto.Zip,
-                Phone = dto.Phone
+                Phone = dto.Phone,
+                Apartment = dto.Apartment
             };
 
             user.Addresses.Add(newAddress);
@@ -141,6 +142,7 @@ namespace API.Controllers
             address.State = dto.State;
             address.Zip = dto.Zip;
             address.Phone = dto.Phone;
+            address.Apartment = dto.Apartment;
 
             await _context.SaveChangesAsync();
             return Ok(address);

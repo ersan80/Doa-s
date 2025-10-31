@@ -8,6 +8,7 @@ interface AuthContextType {
     isAdmin?: boolean;
     login: (data: { token: string; email: string; emailConfirmed: boolean }) => void;
     logout: () => void;
+    refreshUser: () => void;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,64 +17,49 @@ const AuthContext = createContext<AuthContextType>({
     emailConfirmed: false,
     login: () => { },
     logout: () => { },
+    refreshUser: () => { },
 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const [token, setToken] = useState<string | null>(() => localStorage.getItem("token"));
     const [email, setEmail] = useState<string | null>(() => localStorage.getItem("email"));
-    const [emailConfirmed, setEmailConfirmed] = useState<boolean>(() => {
-        const stored = localStorage.getItem("emailConfirmed");
-        return stored === "true";
-    });
-
+    const [emailConfirmed, setEmailConfirmed] = useState<boolean>(() => localStorage.getItem("emailConfirmed") === "true");
     const navigate = useNavigate();
+
     const adminEmail = "kifipi9327@dropeso.com";
 
-    const login = ({
-        token,
-        email,
-        emailConfirmed,
-    }: {
-        token: string;
-        email: string;
-        emailConfirmed: boolean;
-    }) => {
+    const login = ({ token, email, emailConfirmed }: { token: string; email: string; emailConfirmed: boolean }) => {
         localStorage.setItem("token", token);
         localStorage.setItem("email", email);
         localStorage.setItem("emailConfirmed", String(emailConfirmed));
         setToken(token);
         setEmail(email);
         setEmailConfirmed(emailConfirmed);
+        window.dispatchEvent(new Event("profile-updated"));
+    };
+
+    const refreshUser = () => {
+        setEmail(localStorage.getItem("email"));
+        setEmailConfirmed(localStorage.getItem("emailConfirmed") === "true");
+        window.dispatchEvent(new Event("profile-updated"));
     };
 
     const logout = () => {
-        localStorage.removeItem("token");
-        localStorage.removeItem("email");
-        localStorage.removeItem("emailConfirmed");
-
+        ["token", "email", "emailConfirmed", "cart", "userProfile"].forEach((k) =>
+            localStorage.removeItem(k)
+        );
         setToken(null);
         setEmail(null);
         setEmailConfirmed(false);
-        setTimeout(() => {
-            navigate("/home");
-        }, 100);
+        window.dispatchEvent(new Event("profile-updated"));
+        setTimeout(() => navigate("/home", { replace: true }), 200);
     };
 
     return (
-        <AuthContext.Provider
-            value={{
-                token,
-                email,
-                emailConfirmed,
-                isAdmin: email === adminEmail,
-                login,
-                logout,
-            }}
-        >
+        <AuthContext.Provider value={{ token, email, emailConfirmed, isAdmin: email === adminEmail, login, logout, refreshUser }}>
             {children}
         </AuthContext.Provider>
     );
 };
 
 export const useAuth = () => useContext(AuthContext);
-

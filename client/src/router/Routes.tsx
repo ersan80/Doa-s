@@ -18,7 +18,7 @@ import DiscoverCoffee from "../pages/DiscoverCoffee";
 import UserOrdersPage from "../pages/UserOrdersPage"
 import UserInfoPage from "../pages/UserInfoPage";
 import HelpPage from "../pages/HelpPage";
-
+import CheckoutPage from "../pages/CheckoutPage";
 export const router = createBrowserRouter([
 
     {
@@ -51,8 +51,8 @@ export const router = createBrowserRouter([
 
             {
                 path: "/checkout", element: (
-                    <ProtectedRoute requireVerifiedEmail>
-                        <AllOrderPage/>
+                    <ProtectedRoute >
+                        <CheckoutPage/>
                     </ProtectedRoute>)
             }
 

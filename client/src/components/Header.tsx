@@ -37,6 +37,8 @@ import useScrollTrigger from "@mui/material/useScrollTrigger";
 const brandBrown = "#b87333";
 
 export default function Header() {
+  // 👇 Avatar URL’ini oluşturuyoruz
+
   const trigger = useScrollTrigger({ disableHysteresis: true, threshold: 0 });
   const { token, logout, isAdmin } = useAuth();
   const { user } = useUser(token);
@@ -53,13 +55,20 @@ export default function Header() {
   const displayName = email
     ? email.split("@")[0].replace(/[._-]/g, " ").trim().replace(/\s+/g, " ")
     : "Guest";
+  const avatarSrc = profile.avatar
+    ? `${import.meta.env.VITE_API_BASE_URL.replace("/api", "")}${profile.avatar}?v=${Date.now()}`
+    : "";
 
   // 🔄 Profil foto ve isim localStorage’dan sürekli dinle
   useEffect(() => {
     const loadProfile = () => {
       const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
-      if (stored.email === email) {
-        setProfile({ name: stored.name, avatar: stored.avatar });
+      if (stored?.email === email) {
+        setProfile({
+          name: stored.name ?? displayName,
+          // localStorage'a absolute avatar kaydediyoruz; yoksa null
+          avatar: stored.avatar ?? null,
+        });
       } else {
         setProfile({});
       }
@@ -67,7 +76,8 @@ export default function Header() {
     loadProfile();
     window.addEventListener("profile-updated", loadProfile);
     return () => window.removeEventListener("profile-updated", loadProfile);
-  }, [email]);
+  }, [email, token, displayName]); // 👈 token da eklendi
+
 
   const drawerLinks = token
     ? [
@@ -189,7 +199,7 @@ export default function Header() {
             {/* ✅ Profil foto veya isim baş harfi */}
             {!isMobile && (
               <Avatar
-                src={profile.avatar || ""}
+                src={avatarSrc}
                 alt={profile.name || displayName}
                 sx={{
                   width: 38,

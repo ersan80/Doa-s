@@ -9,5 +9,6 @@ namespace Application.DTOs
         public string State { get; set; }
         public string Zip { get; set; }
         public string Phone { get; set; }
+        public string? Apartment { get; set; }
     }
 }
