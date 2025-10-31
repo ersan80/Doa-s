@@ -17,15 +17,24 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { useCart } from "../context/CartContext";
+import { Address } from "../model/UserTypes";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 const API_IMAGES_URL = import.meta.env.VITE_API_IMAGES_URL;
 
-export default function AllOrdersPage() {
+interface AllOrdersPageProps {
+    /** CheckoutPage'den geliyor: AddressSelector seçimi */
+    selectedAddress?: Address | null;
+}
+
+export default function AllOrdersPage({ selectedAddress }: AllOrdersPageProps) {
     const { items, hydrated, updateQuantity, removeFromCart, clearCart } = useCart();
     const navigate = useNavigate();
     const { email } = useAuth();
 
+    // Form state
     const [fullName, setFullName] = useState("");
     const [address, setAddress] = useState("");
     const [apt, setApt] = useState("");
@@ -33,20 +42,38 @@ export default function AllOrdersPage() {
     const [state, setState] = useState("");
     const [zip, setZip] = useState("");
     const [phone, setPhone] = useState("");
+
+    // Discount
     const [discountCode, setDiscountCode] = useState("");
     const [discountValue, setDiscountValue] = useState(0);
+
+    // Kayıtlı adres etiketleri (localStorage tarafı)
     const [savedAddresses, setSavedAddresses] = useState<string[]>([]);
     const [defaultAddress, setDefaultAddress] = useState<string | null>(null);
 
-    // ✅ sepette ürün yoksa shop’a yönlendir
+    const [submitting, setSubmitting] = useState(false);
+
+    // Sepet boşsa shop'a
+    // ✅ sepette ürün yoksa, ama sipariş tamamlanmadıysa yönlendir
+    // 🚫 Sadece kullanıcı checkout’tayken ve sipariş gönderilmiyorken yönlendir
+    // ✅ sepette ürün yoksa ama sipariş tamamlanmadıysa yönlendirme
     useEffect(() => {
         if (!hydrated) return;
-        if (items.length === 0 && window.location.pathname !== "/orders") {
-            navigate("/shop");
-        }
-    }, [hydrated, items.length, navigate]);
 
-    // ✅ profil bilgilerini çek (adres önerileri dahil)
+        // sadece checkout sayfasında geçerli
+        const isCheckoutPage = window.location.pathname === "/checkout";
+
+        // 🧩 submitting true ise bu blok hiç çalışmasın
+        if (isCheckoutPage && !submitting && items.length === 0) {
+            // kullanıcı yanlışlıkla checkout'a boş sepetle gelmişse
+            navigate("/checkout", { replace: true } );
+        }
+    }, [hydrated, items.length, navigate, submitting]);
+
+
+
+
+    // Kullanıcı profilinden isim + savedAddresses + defaultAddress
     useEffect(() => {
         const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
         if (stored.email === email) {
@@ -58,6 +85,17 @@ export default function AllOrdersPage() {
             }
         }
     }, [email]);
+
+    // AddressSelector seçtiğinde formu otomatik doldur
+    useEffect(() => {
+        if (!selectedAddress) return;
+        setAddress(selectedAddress.line1 || "");
+        setCity(selectedAddress.city || "");
+        setState(selectedAddress.state || "");
+        setZip(selectedAddress.zip || "");
+        setPhone(selectedAddress.phone || "");
+        setApt(selectedAddress.apartment ?? "");
+    }, [selectedAddress]);
 
     const subtotal = useMemo(
         () => items.reduce((sum, i) => sum + i.price * i.quantity, 0),
@@ -71,33 +109,60 @@ export default function AllOrdersPage() {
 
     const handleApplyDiscount = () => {
         if (discountCode.trim().toUpperCase() === "WELCOME10") {
-            setDiscountValue(parseFloat((subtotal * 0.1).toFixed(2)));
+            const val = parseFloat((subtotal * 0.1).toFixed(2));
+            setDiscountValue(val);
+            toast.success("Discount applied: 10% off!");
         } else {
             setDiscountValue(0);
+            toast.error("Invalid discount code");
         }
     };
 
-    // ✅ Default Address seçimi
     const handleSetDefaultAddress = (addr: string) => {
         setDefaultAddress(addr);
         const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
         if (stored.email === email) {
             stored.defaultAddress = addr;
             localStorage.setItem("userProfile", JSON.stringify(stored));
+            toast.info("Default address updated");
+            // Event: header ve diğer yerler güncellesin
+            window.dispatchEvent(new Event("profile-updated"));
         }
     };
 
-    // ✅ Siparişi gönder
+    // Basit zorunlu alan kontrolü
+    const isFormValid = () => {
+        return (
+            fullName.trim() &&
+            address.trim() &&
+            city.trim() &&
+            state.trim() &&
+            zip.trim() &&
+            phone.trim()
+        );
+    };
+
+    const buildAddressLine = () => {
+        const aptPart = apt ? `, ${apt}` : "";
+        return `${address}${aptPart}, ${city}, ${state} ${zip}`.trim();
+    };
     const handleSubmit = async () => {
-        if (!fullName || !address || !city || !state || !zip || !phone) {
-            alert("Please fill in all required fields.");
+        // Basic form validation
+        if (!isFormValid()) {
+            toast.error("Please fill in all required fields before completing your order.");
+            return;
+        }
+
+        // Prevent submitting empty cart
+        if (items.length === 0) {
+            toast.error("Your cart is empty.");
             return;
         }
 
         const orderData = {
             userId: email ?? "guest",
             customerName: fullName,
-            address: `${address}${apt ? ", " + apt : ""}, ${city}, ${state} ${zip}`,
+            address: buildAddressLine(),
             phone,
             status: "Pending",
             items: items.map((i) => ({
@@ -107,52 +172,74 @@ export default function AllOrdersPage() {
                 quantity: i.quantity,
                 price: i.price,
             })),
+            discountCode: discountValue > 0 ? "WELCOME10" : null,
+            discountValue,
+            subtotal,
+            total,
         };
 
         try {
-            await axios.post(`${API_BASE_URL}/order`, orderData, {
+            setSubmitting(true);
+
+            const res = await axios.post(`${API_BASE_URL}/order`, orderData, {
                 headers: { "Content-Type": "application/json" },
             });
 
-            alert("Your order has been placed successfully!");
+            if (res.status === 200) {
+                // ✅ Show success message first
+                toast.success(
+                    "☕️ Your order has been placed successfully! We're preparing your shipment. You’ll be redirected to 'My Orders' shortly.",
+                    {
+                        position: "top-center",
+                        autoClose: 5000,
+                        pauseOnHover: false,
+                        draggable: false,
+                        closeOnClick: true,
+                        theme: "colored",
+                    }
+                );
 
-            // ✅ Yeni adresi kaydetme kontrolü
-            const stored = JSON.parse(localStorage.getItem("userProfile") || "{}");
-            if (stored.email === email && address) {
-                const isNew = !(stored.savedAddresses || []).includes(address);
-                if (isNew && confirm("Save this new address to your address book?")) {
-                    const updated = {
-                        ...stored,
-                        savedAddresses: [...(stored.savedAddresses || []), address],
-                    };
-                    localStorage.setItem("userProfile", JSON.stringify(updated));
-                    window.dispatchEvent(new Event("profile-updated"));
-                }
+                // ✅ Clear the cart after 1.5 seconds (so the toast appears first)
+                setTimeout(() => {
+                    clearCart();
+                }, 1500);
+
+                // ✅ Navigate to 'My Orders' after 5 seconds
+                setTimeout(() => {
+                    navigate("/orders", { replace: true });
+                }, 5000);
+            } else {
+                toast.error("Unexpected server response. Please try again.");
             }
-
-            clearCart();
-            navigate("/orders", { replace: true });
         } catch (err) {
-            console.error(err);
-            alert("Failed to create order.");
+            console.error("❌ Order submission error:", err);
+            toast.error("Failed to create order. Please try again later.");
+        } finally {
+            setSubmitting(false);
         }
     };
 
+
+
+
     if (!hydrated) {
-        return <Box sx={{ p: 4 }}>Loading your cart...</Box>;
+        return (
+            <Box sx={{ p: 4 }}>
+                <Typography>Loading your cart…</Typography>
+            </Box>
+        );
     }
 
     return (
         <Box sx={{ p: { xs: 2, md: 4 }, maxWidth: 1400, mx: "auto" }}>
+            <ToastContainer position="top-right" autoClose={2000} theme="colored" />
+
             <Grid
                 container
                 spacing={3}
                 alignItems="flex-start"
                 wrap="nowrap"
-                sx={{
-                    flexDirection: { xs: "column", md: "row" },
-                    overflow: "hidden",
-                }}
+                sx={{ flexDirection: { xs: "column", md: "row" }, overflow: "hidden" }}
             >
                 {/* LEFT — ORDER SUMMARY */}
                 <Grid
@@ -175,11 +262,7 @@ export default function AllOrdersPage() {
                         variant="h5"
                         fontWeight={700}
                         gutterBottom
-                        sx={{
-                            mb: 2,
-                            color: "#a75e22",
-                            textTransform: "uppercase",
-                        }}
+                        sx={{ mb: 2, color: "#a75e22", textTransform: "uppercase" }}
                     >
                         Order Summary
                     </Typography>
@@ -211,9 +294,7 @@ export default function AllOrdersPage() {
                                         mr: 2,
                                     }}
                                     image={
-                                        item.imageUrl
-                                            ? `${API_IMAGES_URL}/${item.imageUrl}`
-                                            : "/placeholder.jpg"
+                                        item.imageUrl ? `${API_IMAGES_URL}/${item.imageUrl}` : "/placeholder.jpg"
                                     }
                                     alt={item.name}
                                 />
@@ -280,10 +361,7 @@ export default function AllOrdersPage() {
                             sx={{
                                 color: "#5e3d1e",
                                 borderColor: "#5e3d1e",
-                                "&:hover": {
-                                    backgroundColor: "#5e3d1e",
-                                    color: "#fff",
-                                },
+                                "&:hover": { backgroundColor: "#5e3d1e", color: "#fff" },
                             }}
                         >
                             Apply
@@ -291,9 +369,7 @@ export default function AllOrdersPage() {
                     </Box>
 
                     <Box sx={{ mt: 3 }}>
-                        <Typography variant="body1">
-                            Subtotal: ${subtotal.toFixed(2)}
-                        </Typography>
+                        <Typography variant="body1">Subtotal: ${subtotal.toFixed(2)}</Typography>
                         {discountValue > 0 && (
                             <Typography color="success.main">
                                 Discount: -${discountValue.toFixed(2)}
@@ -305,7 +381,7 @@ export default function AllOrdersPage() {
                     </Box>
                 </Grid>
 
-                {/* RIGHT — CONTACT FORM */}
+                {/* RIGHT — CONTACT & DELIVERY */}
                 <Grid sx={{ xs: 12, md: 7, flexBasis: { md: "60%" } }}>
                     <Box
                         sx={{
@@ -324,16 +400,13 @@ export default function AllOrdersPage() {
                                 variant="h5"
                                 fontWeight={700}
                                 gutterBottom
-                                sx={{
-                                    color: "#a75e22",
-                                    textTransform: "uppercase",
-                                }}
+                                sx={{ color: "#a75e22", textTransform: "uppercase" }}
                             >
                                 Contact & Delivery
                             </Typography>
 
                             <Grid container spacing={2}>
-                                <Grid item xs={12} md={6}>
+                                <Grid sx={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Full Name"
@@ -342,7 +415,7 @@ export default function AllOrdersPage() {
                                     />
                                 </Grid>
 
-                                <Grid item xs={12} md={6}>
+                                <Grid sx={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Address"
@@ -388,7 +461,7 @@ export default function AllOrdersPage() {
                                     )}
                                 </Grid>
 
-                                <Grid item xs={12} md={6}>
+                                <Grid sx={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="Apartment, suite, etc. (optional)"
@@ -396,7 +469,7 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setApt(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid sx={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="City"
@@ -404,7 +477,7 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setCity(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid sx={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="State"
@@ -412,7 +485,7 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setState(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid item xs={12} md={6}>
+                                <Grid sx={{ xs: 12, md: 6 }}>
                                     <TextField
                                         fullWidth
                                         label="ZIP Code"
@@ -420,7 +493,7 @@ export default function AllOrdersPage() {
                                         onChange={(e) => setZip(e.target.value)}
                                     />
                                 </Grid>
-                                <Grid item xs={12}>
+                                <Grid sx={{ xs: 12 }}>
                                     <TextField
                                         fullWidth
                                         label="Phone"
@@ -435,6 +508,7 @@ export default function AllOrdersPage() {
                             variant="contained"
                             size="large"
                             fullWidth
+                            disabled={submitting}
                             sx={{
                                 mt: 4,
                                 py: 1.7,
@@ -450,7 +524,7 @@ export default function AllOrdersPage() {
                             }}
                             onClick={handleSubmit}
                         >
-                            Complete Order
+                            {submitting ? "Placing Order…" : "Complete Order"}
                         </Button>
                     </Box>
                 </Grid>

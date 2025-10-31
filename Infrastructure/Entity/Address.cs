@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Infrastructure.Entity
 {
     public class Address
@@ -8,11 +10,13 @@ namespace Infrastructure.Entity
         public string State { get; set; } = string.Empty;
         public string Zip { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
+        public string? Apartment { get; set; } = string.Empty;
 
-        // Foreign Key
+
         public int UserId { get; set; }
 
-        // Navigation
-        public User User { get; set; }
+        // 🧩 Sonsuz döngüyü engelle
+        [JsonIgnore] // ✅ Buraya da ekle
+        public User? User { get; set; }
     }
 }

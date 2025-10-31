@@ -1,216 +1,226 @@
-import React, { useEffect, useState } from "react";
+// src/pages/UserInfoPage.tsx
+import { useEffect, useMemo, useState } from "react";
 import {
-    Box,
-    Typography,
-    Avatar,
-    TextField,
-    Button,
-    Grid,
-    IconButton,
-    Card,
-    CardContent,
-    Divider,
+    Box, Typography, Avatar, TextField, Button, Grid, IconButton, Divider,
+    Tabs, Tab, MenuItem, Stack, Card, CardContent
 } from "@mui/material";
-import { Edit, Delete, PhotoCamera } from "@mui/icons-material";
+import { PhotoCamera } from "@mui/icons-material";
+import { toast, ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+
 import { fetchJson } from "../utils/fetchJson";
+import { Address, User } from "../model/UserTypes";
+import AddressDialog from "../components/AddressDialog";
+import { useAuth } from "../context/AuthContext";
 
-interface Address {
-    id: number;
-    line1: string;
-    city: string;
-    state: string;
-    zip: string;
-    phone: string;
-}
+export default function UserInfoPage() {
+    const { refreshUser } = useAuth();
+    const [tab, setTab] = useState(0);
 
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    avatarUrl?: string;
-    defaultAddress?: string;
-    addresses?: Address[];
-}
-
-const UserInfoPage: React.FC = () => {
     const [user, setUser] = useState<User | null>(null);
     const [loading, setLoading] = useState(true);
+
     const [fullName, setFullName] = useState("");
     const [defaultAddress, setDefaultAddress] = useState("");
     const [avatar, setAvatar] = useState<File | null>(null);
+
     const [addresses, setAddresses] = useState<Address[]>([]);
-    const [editAddress, setEditAddress] = useState<Address | null>(null);
+    const [openDialog, setOpenDialog] = useState(false);
+    const [edit, setEdit] = useState<Address | null>(null);
 
-    // ✅ Kullanıcıyı backend'den çek
-    useEffect(() => {
-        async function fetchUser() {
-            try {
-                const data = await fetchJson<User>(
-                    `${import.meta.env.VITE_API_BASE_URL}/user`
-                );
-                setUser(data);
-                setFullName(data.name || "");
-                setDefaultAddress(data.defaultAddress || "");
-                setAddresses(data.addresses || []);
-            } catch (err) {
-                console.error("fetch user failed", err);
-            } finally {
-                setLoading(false);
-            }
+    const load = async () => {
+        try {
+            const u = await fetchJson<User>(`${import.meta.env.VITE_API_BASE_URL}/user`);
+            setUser(u);
+            setFullName(u.name || "");
+            setDefaultAddress(u.defaultAddress || "");
+            setAddresses(u.addresses || []);
+        } catch (e) {
+            console.error("fetch user failed", e);
+            toast.error("Could not load profile");
+        } finally {
+            setLoading(false);
         }
-        fetchUser();
-    }, []);
+    };
 
-    // ✅ Profil kaydet (isim, varsayılan adres, avatar)
-    const handleSave = async () => {
+    useEffect(() => { load(); }, []);
+
+    const avatarUrl = useMemo(() => {
+        if (!user?.avatarUrl) return "";
+        // backend "/uploads/xxx.png" döndürüyor → tam URL yap + cache-bust
+        const base = import.meta.env.VITE_API_BASE_URL.replace("/api", "");
+        return `${base}${user.avatarUrl}?v=${user.id}-${Date.now()}`;
+    }, [user?.avatarUrl, user?.id]);
+
+    const handleSaveProfile = async () => {
         if (!user) return;
-        const formData = new FormData();
-        formData.append("FullName", fullName);
-        formData.append("DefaultAddress", defaultAddress);
-        if (avatar) formData.append("Avatar", avatar);
+        const form = new FormData();
+        form.append("FullName", fullName);
+        form.append("DefaultAddress", defaultAddress);
+        if (avatar) form.append("Avatar", avatar);
 
-        await fetch(`${import.meta.env.VITE_API_BASE_URL}/user/${user.id}`, {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/user/${user.id}`, {
             method: "PUT",
-            body: formData,
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem("token")}`,
-            },
+            headers: { Authorization: `Bearer ${localStorage.getItem("token") || ""}` },
+            body: form,
         });
 
-        alert("Profile updated successfully!");
+        if (!res.ok) { toast.error("Profile update failed"); return; }
+
+        const updated = await res.json();
+        setUser(updated);
+        localStorage.setItem("userProfile", JSON.stringify(updated));
+        window.dispatchEvent(new Event("profile-updated"));
+        refreshUser?.();
+        toast.success("Profile updated");
     };
 
-    // ✅ Adres ekle veya düzenle
-    const handleSaveAddress = async () => {
+    const upsertAddress = async (data: Omit<Address, "id"> | Address) => {
         if (!user) return;
-        if (editAddress?.id) {
-            // update
-            await fetchJson(
-                `${import.meta.env.VITE_API_BASE_URL}/user/${user.id}/address/${editAddress.id}`,
-                {
-                    method: "PUT",
-                    body: JSON.stringify(editAddress),
-                    headers: { "Content-Type": "application/json" },
-                }
-            );
-        } else {
-            // add new
-            await fetchJson(`${import.meta.env.VITE_API_BASE_URL}/user/${user.id}/address`, {
-                method: "POST",
-                body: JSON.stringify(editAddress),
+        if ("id" in data) {
+            const updated = await fetchJson<Address>(`${import.meta.env.VITE_API_BASE_URL}/user/${user.id}/address/${data.id}`, {
+                method: "PUT",
                 headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
             });
+            setAddresses(prev => prev.map(a => (a.id === updated.id ? updated : a)));
+            toast.success("Address updated");
+        } else {
+            const created = await fetchJson<Address>(`${import.meta.env.VITE_API_BASE_URL}/user/${user.id}/address`, {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data),
+            });
+            setAddresses(prev => [...prev, created]);
+
+            // İstersen defaultAddress alanını otomatik doldur:
+            if (!defaultAddress) setDefaultAddress(`${created.line1}, ${created.city}`);
+            toast.success("Address added");
         }
-        alert("Address saved successfully!");
     };
 
-    // ✅ Adres sil
-    const handleDeleteAddress = async (id: number) => {
+    const removeAddress = async (id: number) => {
         if (!user) return;
-        await fetchJson(`${import.meta.env.VITE_API_BASE_URL}/user/${user.id}/address/${id}`, {
-            method: "DELETE",
-        });
-        setAddresses(addresses.filter((a) => a.id !== id));
+        await fetchJson(`${import.meta.env.VITE_API_BASE_URL}/user/${user.id}/address/${id}`, { method: "DELETE" });
+        setAddresses(prev => prev.filter(a => a.id !== id));
+        toast.success("Address deleted");
     };
 
-    if (loading) return <Typography>Loading...</Typography>;
-    if (!user) return <Typography>No user found.</Typography>;
+    if (loading) return <Typography sx={{ p: 3 }}>Loading…</Typography>;
+    if (!user) return <Typography sx={{ p: 3 }}>No user found.</Typography>;
 
     return (
-        <Box sx={{ p: 4 }}>
-            <Typography variant="h4" sx={{ color: "#6b4a2b", mb: 2, fontWeight: 700 }}>
+        <Box sx={{ p: { xs: 2, md: 4 } }}>
+            <Typography variant="h4" sx={{ color: "#6b4a2b", fontWeight: 700, mb: 1 }}>
                 My Profile
             </Typography>
             <Divider sx={{ mb: 3 }} />
 
             {/* Avatar */}
-            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 3 }}>
-                <Avatar
-                    src={
-                        user.avatarUrl
-                            ? `${import.meta.env.VITE_API_BASE_URL}/${user.avatarUrl}`
-                            : undefined
-                    }
-                    sx={{ width: 120, height: 120, bgcolor: "#b38b59" }}
-                >
-                    {!user.avatarUrl && user.name?.[0]?.toUpperCase()}
+            <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", mb: 2 }}>
+                <Avatar src={avatarUrl || undefined} alt={user.name} sx={{ width: 120, height: 120, bgcolor: "#b38b59" }}>
+                    {!avatarUrl && user.name?.[0]?.toUpperCase()}
                 </Avatar>
-                <IconButton color="primary" component="label">
+                <IconButton color="primary" component="label" sx={{ mt: 1 }}>
                     <PhotoCamera />
-                    <input
-                        hidden
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => setAvatar(e.target.files?.[0] || null)}
-                    />
+                    <input hidden type="file" accept="image/*" onChange={(e) => setAvatar(e.target.files?.[0] || null)} />
                 </IconButton>
             </Box>
 
-            {/* Profile info */}
-            <Grid container spacing={2} sx={{ mb: 3 }}>
-                <Grid item xs={12} md={6}>
-                    <TextField
-                        fullWidth
-                        label="Full Name"
-                        value={fullName}
-                        onChange={(e) => setFullName(e.target.value)}
-                    />
-                </Grid>
-                <Grid item xs={12} md={6}>
-                    <TextField
-                        fullWidth
-                        label="Default Address"
-                        value={defaultAddress}
-                        onChange={(e) => setDefaultAddress(e.target.value)}
-                    />
-                </Grid>
-            </Grid>
+            {/* Tabs */}
+            <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ mb: 2 }}>
+                <Tab label="Profile Info" />
+                <Tab label="My Addresses" />
+            </Tabs>
 
-            <Button
-                onClick={handleSave}
-                fullWidth
-                sx={{
-                    mt: 2,
-                    background: "linear-gradient(to right, #6b4a2b, #b38b59)",
-                    color: "#fff",
-                    fontWeight: 600,
-                    py: 1.2,
-                    "&:hover": { opacity: 0.9 },
-                }}
-            >
-                Save Changes
-            </Button>
-
-            {/* Address Section */}
-            <Typography variant="h5" sx={{ mt: 5, mb: 2, color: "#6b4a2b", fontWeight: 600 }}>
-                My Addresses
-            </Typography>
-
-            <Grid container spacing={2}>
-                {addresses.map((address) => (
-                    <Grid item xs={12} md={6} key={address.id}>
-                        <Card>
-                            <CardContent>
-                                <Typography variant="subtitle1">{address.line1}</Typography>
-                                <Typography variant="body2" color="text.secondary">
-                                    {address.city}, {address.state} {address.zip}
-                                </Typography>
-                                <Typography variant="body2">📞 {address.phone}</Typography>
-                                <Box sx={{ mt: 1 }}>
-                                    <IconButton onClick={() => setEditAddress(address)} color="primary">
-                                        <Edit />
-                                    </IconButton>
-                                    <IconButton onClick={() => handleDeleteAddress(address.id)} color="error">
-                                        <Delete />
-                                    </IconButton>
-                                </Box>
-                            </CardContent>
-                        </Card>
+            {tab === 0 && (
+                <Box>
+                    <Grid container spacing={2} sx={{ mb: 2 }}>
+                        <Grid item xs={12} md={6}>
+                            <TextField label="Full Name" fullWidth value={fullName} onChange={e => setFullName(e.target.value)} />
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <TextField
+                                select
+                                label="Default Address"
+                                fullWidth
+                                value={defaultAddress}
+                                onChange={e => setDefaultAddress(e.target.value)}
+                                helperText="Used as your default shipping address"
+                            >
+                                <MenuItem value="">None</MenuItem>
+                                {addresses.map(a => (
+                                    <MenuItem key={a.id} value={`${a.line1}, ${a.city}`}>
+                                        {a.line1}, {a.city}
+                                    </MenuItem>
+                                ))}
+                            </TextField>
+                        </Grid>
                     </Grid>
-                ))}
-            </Grid>
+
+                    <Button
+                        onClick={handleSaveProfile}
+                        fullWidth
+                        sx={{
+                            mt: 1.5,
+                            background: "linear-gradient(to right, #6b4a2b, #b38b59)",
+                            color: "#fff", fontWeight: 600, py: 1.2,
+                            "&:hover": { opacity: 0.9 },
+                        }}
+                    >
+                        Save Changes
+                    </Button>
+                </Box>
+            )}
+
+            {tab === 1 && (
+                <Box>
+                    <Stack direction="row" justifyContent="flex-end" sx={{ mb: 2 }}>
+                        <Button
+                            variant="contained"
+                            onClick={() => { setEdit(null); setOpenDialog(true); }}
+                            sx={{ bgcolor: "#6b4a2b", "&:hover": { bgcolor: "#553a21" } }}
+                        >
+                            Add New Address
+                        </Button>
+                    </Stack>
+
+                    <Grid container spacing={2}>
+                        {addresses.map(a => (
+                            <Grid item xs={12} md={6} lg={4} key={a.id}>
+                                <Card sx={{ border: "1px solid #eee" }}>
+                                    <CardContent>
+                                        <Typography fontWeight={600}>{a.line1}</Typography>
+                                        <Typography variant="body2" color="text.secondary">
+                                            {a.city}, {a.state} {a.zip}
+                                        </Typography>
+                                        <Typography variant="body2">📞 {a.phone}</Typography>
+
+                                        <Stack direction="row" spacing={1} sx={{ mt: 1.5 }}>
+                                            <Button size="small" variant="outlined" onClick={() => { setEdit(a); setOpenDialog(true); }}>
+                                                Edit
+                                            </Button>
+                                            <Button size="small" color="error" variant="outlined" onClick={() => removeAddress(a.id)}>
+                                                Delete
+                                            </Button>
+                                        </Stack>
+                                    </CardContent>
+                                </Card>
+                            </Grid>
+                        ))}
+                    </Grid>
+
+                    <AddressDialog
+                        open={openDialog}
+                        initial={edit}
+                        onClose={() => setOpenDialog(false)}
+                        onSave={upsertAddress}
+                    />
+                </Box>
+            )}
+
+            <ToastContainer position="top-right" autoClose={2000} theme="colored" />
         </Box>
     );
-};
+}
 
-export default UserInfoPage;
